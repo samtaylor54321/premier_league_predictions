@@ -25,7 +25,7 @@ class Predictor:
                                         self.config["simulations_to_run"])
             print(self.config[fixture]["home"] + ":" + str(result[0]) + " / " +
                   self.config[fixture]["away"] + ":" + str(result[1]) + " / " +
-                  "Draw : " + str(result[2]))
+                  "Draw: " + str(result[2]) + " - Expected Goals: " + str(np.round(result[3], 1)) + ":" + str(np.round(result[4], 1)))
 
     def predict_match(self, home_team, away_team, sims):
         """Predicts the outcome for an individual match
@@ -38,14 +38,24 @@ class Predictor:
         Return:
             tuple: containing the probability of a home win, away win or draw
         """
+        # Instantiate empty values
         away_win = 0
+        away_goals_scored = 0
         home_win = 0
+        home_goals_scored = 0
         draw = 0
 
+        # Loop through simulations
         for i in range(sims):
+            # Chose random goals
             away_goals = np.random.choice(self.away_goals_dict[away_team], 1)
             home_goals = np.random.choice(self.home_goals_dict[home_team], 1)
 
+            # Update goals scored for prediction
+            away_goals_scored += away_goals
+            home_goals_scored += home_goals
+
+            # Update results
             if away_goals > home_goals:
                 away_win += 1
             elif home_goals > away_goals:
@@ -53,4 +63,4 @@ class Predictor:
             else:
                 draw += 1
 
-        return home_win / sims, away_win / sims, draw / sims
+        return home_win / sims, away_win / sims, draw / sims, home_goals_scored / sims, away_goals_scored / sims
