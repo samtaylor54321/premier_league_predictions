@@ -70,3 +70,74 @@ class Cleaner:
             home_goals_dict[i] = home_goals_dict[i].astype(int)
 
         return home_goals_dict
+
+
+def parse_promoted_away_team_goals(promoted_team, filepath):
+    """Overwrites existing values for teams which have been prompted to the premier league tihs season
+
+    Notes:
+        Teams promoted to the Premier League for this season will likely have excelled in the Championship and
+        will struggle more in the premier league. Given this, goals for these teams will be replaced with values
+        from previous season in the premier league.
+
+    Args:
+        promoted_team (str): 3 letter abb for the prompted team
+        filepath (str): Filepath to result for the team's last outing in the premier league.
+
+    Returns:
+        array: Away goals scored by the promoted team.
+    """
+    # Load file into memory
+    with open(filepath, "r") as file:
+        new_dataset = pd.read_csv(file)
+
+    # Set team name as index
+    new_dataset = new_dataset.set_index("Home \ Away")
+
+    # Loop through the dataframe until the correct column is reached
+    for col in new_dataset.columns:
+        if col != promoted_team:
+            pass
+        else:
+            # Extract the values of interest
+            away_goals = new_dataset[col].str[2:]
+            array_filter = np.logical_and(~away_goals.isnull(), away_goals != "")
+            promoted_team_goals = away_goals.array[array_filter].astype(int)
+
+            return promoted_team_goals
+
+
+def parse_promoted_home_team_goals(promoted_team, filepath):
+    """Overwrites existing values for teams which have been prompted to the premier league this season
+
+    Notes:
+        Teams promoted to the Premier League for this season will likely have excelled in the Championship and
+        will struggle more in the premier league. Given this, goals for these teams will be replaced with values
+        from previous season in the premier league.
+
+    Args:
+        promoted_team (str): Name of team to replace in index
+        filepath (str): Filepath to result for the team's last outing in the premier league.
+
+    Returns:
+        array: Home goals scored by the promoted team.
+    """
+    # Load file into memory
+    with open(filepath, "r") as file:
+        new_dataset = pd.read_csv(file)
+
+    # Set team name as index
+    new_dataset = new_dataset.set_index("Home \ Away")
+
+    # Get position of promoted team in index
+    team_index_value = new_dataset.index.get_loc(promoted_team)
+    home_scores = []
+
+    # Loop through the dataset extracting the number of home goals scored
+    for col in range(new_dataset.shape[1]):
+        home_scores.append(new_dataset.iloc[team_index_value, col][0])
+
+    home_scores = np.asarray(home_scores)
+    # Remove any strange characters which appear
+    mask = np.logical_and(home_scores != '-', home_scores != '�')
+    return home_scores[mask].astype(int)
