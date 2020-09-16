@@ -26,8 +26,8 @@ class Predictor:
                                         self.config["simulations_to_run"])
             print(self.config[fixture]["home"] + ":" + str(result[0]) + " / " +
                   self.config[fixture]["away"] + ":" + str(result[1]) + " / " +
-                  "Draw: " + str(result[2]) + " - Expected Goals: " + str(floor(result[3])) + ":" +
-                  str(floor(result[4])))
+                  "Draw: " + str(result[2]) + " - Expected Goals: " + str(np.round(result[3], 1)) + ":" +
+                  str(np.round(result[4], 1)))
 
     def predict_match(self, home_team, away_team, sims):
         """Predicts the outcome for an individual match
