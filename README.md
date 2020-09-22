@@ -23,13 +23,13 @@ Score - 4pts
 
 |           Probability                  |            Score                | Result | 
 |----------------------------------------|---------------------------------|--------|
-|EVE:0.5392 / WBA:0.1078 / Draw: 0.353   | - Expected Goals: [1.3]:[0.5]   |        |
-|LEE:0.496 / FUL:0.2195 / Draw: 0.2845   | - Expected Goals: [1.3]:[0.6]   |        |
-|LEI:0.5603 / BUR:0.2237 / Draw: 0.216   | - Expected Goals: [1.8]:[1.]    |        |
-|MUN:0.6677 / CRY:0.1566 / Draw: 0.1757  | - Expected Goals: [2.1]:[0.8]   |        |
-|SOU:0.2838 / TOT:0.3981 / Draw: 0.3181  | - Expected Goals: [1.1]:[1.3]   |        |
-|ARS:0.6228 / WHU:0.1661 / Draw: 0.2111  | - Expected Goals: [1.9]:[1.]    |        |
-|AVL:0.4674 / SHU:0.2022 / Draw: 0.3304  | - Expected Goals: [1.2]:[0.8]   |        |
-|NEW:0.3604 / BHA:0.3043 / Draw: 0.3353  | - Expected Goals: [1.1]:[1.]    |        |
-|CHE:0.3419 / LIV:0.4083 / Draw: 0.2498  | - Expected Goals: [1.6]:[1.7]   |        |
-|QPR:0.399 / SHW:0.3901 / Draw: 0.2109   | - Expected Goals: [1.8]:[1.7]   |        |
+|EVE:0.5392 / WBA:0.1078 / Draw: 0.353   | - Expected Goals: [1.3]:[0.5]   |  5-2   |
+|LEE:0.496 / FUL:0.2195 / Draw: 0.2845   | - Expected Goals: [1.3]:[0.6]   |  4-3   |
+|LEI:0.5603 / BUR:0.2237 / Draw: 0.216   | - Expected Goals: [1.8]:[1.]    |  4-2   |
+|MUN:0.6677 / CRY:0.1566 / Draw: 0.1757  | - Expected Goals: [2.1]:[0.8]   |  1-3   |
+|SOU:0.2838 / TOT:0.3981 / Draw: 0.3181  | - Expected Goals: [1.1]:[1.3]   |  2-5   |
+|ARS:0.6228 / WHU:0.1661 / Draw: 0.2111  | - Expected Goals: [1.9]:[1.]    |  2-1   |
+|AVL:0.4674 / SHU:0.2022 / Draw: 0.3304  | - Expected Goals: [1.2]:[0.8]   |  1-0   |
+|NEW:0.3604 / BHA:0.3043 / Draw: 0.3353  | - Expected Goals: [1.1]:[1.]    |  0-3   |
+|CHE:0.3419 / LIV:0.4083 / Draw: 0.2498  | - Expected Goals: [1.6]:[1.7]   |  0-2   |
+|WAT:0.399 / SHW:0.3901 / Draw: 0.2109   | - Expected Goals: [1.8]:[1.7]   |  0-0   |

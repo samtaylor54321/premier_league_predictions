@@ -1,31 +1,31 @@
 simulations_to_run: 10000
 game_1:
-  home: "EVE"
-  away: "WBA"
+  home: "BHA"
+  away: "MUN"
 game_2:
-  home: "LEE"
-  away: "FUL"
+  home: "BUR"
+  away: "SOU"
 game_3:
-  home: "LEI"
-  away: "BUR"
+  home: "CRY"
+  away: "EVE"
 game_4:
-  home: "MUN"
-  away: "CRY"
+  home: "TOT"
+  away: "NEW"
 game_5:
-  home: "SOU"
-  away: "TOT"
+  home: "WHU"
+  away: "WOL"
 game_6:
-  home: "ARS"
-  away: "WHU"
+  home: "WBA"
+  away: "CHE"
 game_7:
-  home: "AVL"
-  away: "SHU"
+  home: "SHU"
+  away: "LEE"
 game_8:
-  home: "NEW"
-  away: "BHA"
+  home: "FUL"
+  away: "AVL"
 game_9:
-  home: "CHE"
-  away: "LIV"
+  home: "MCI"
+  away: "LEI"
 game_10:
-  home: "QPR"
-  away: "SHW"
+  home: "BIR"
+  away: "ROT"

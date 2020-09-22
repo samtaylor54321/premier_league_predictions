@@ -58,6 +58,10 @@ class Cleaner:
             mask_one = home_goals_dict[i] != '�'
             home_goals_dict[i] = home_goals_dict[i][mask_one]
 
+            # Remove 'a'
+            mask_one = home_goals_dict[i] != 'a'
+            home_goals_dict[i] = home_goals_dict[i][mask_one]
+
             # Remove "-"
             mask_two = home_goals_dict[i] != '-'
             home_goals_dict[i] = home_goals_dict[i][mask_two]
