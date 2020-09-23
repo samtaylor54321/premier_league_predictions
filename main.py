@@ -113,7 +113,8 @@ def main():
                                                              home_goals_conceded_dataset_update[key])
 
     # Create predictor object
-    predictor = Predictor(config, home_goals_scored_dataset, away_goals_scored_dataset)
+    predictor = Predictor(config, home_goals_scored_dataset, home_goals_conceded_dataset,
+                          away_goals_scored_dataset, away_goals_conceded_dataset)
 
     # Print predictions to screen
     predictor.make_predictions()

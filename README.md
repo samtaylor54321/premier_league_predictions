@@ -33,3 +33,28 @@ Score - 4pts
 |NEW:0.3604 / BHA:0.3043 / Draw: 0.3353  | - Expected Goals: [1.1]:[1.]    |  0-3   |
 |CHE:0.3419 / LIV:0.4083 / Draw: 0.2498  | - Expected Goals: [1.6]:[1.7]   |  0-2   |
 |WAT:0.399 / SHW:0.3901 / Draw: 0.2109   | - Expected Goals: [1.8]:[1.7]   |  0-0   |
+
+
+
+
+BHA:0.2667 / MUN:0.436 / Draw: 0.2973 - Expected Goals: [0.6]:[0.9]
+BUR:0.3733 / SOU:0.3653 / Draw: 0.2614 - Expected Goals: [0.9]:[0.9]
+CRY:0.3841 / EVE:0.2938 / Draw: 0.3221 - Expected Goals: [0.7]:[0.6]
+TOT:0.5065 / NEW:0.1804 / Draw: 0.3131 - Expected Goals: [1.1]:[0.5]
+WHU:0.3043 / WOL:0.4648 / Draw: 0.2309 - Expected Goals: [0.8]:[1.1]
+WBA:0.2534 / CHE:0.3913 / Draw: 0.3553 - Expected Goals: [0.5]:[0.8]
+SHU:0.589 / LEE:0.167 / Draw: 0.244 - Expected Goals: [1.2]:[0.5]
+FUL:0.4131 / AVL:0.3655 / Draw: 0.2214 - Expected Goals: [1.]:[0.9]
+MCI:0.5777 / LEI:0.1803 / Draw: 0.242 - Expected Goals: [1.3]:[0.6]
+BIR:0.2721 / ROT:0.5674 / Draw: 0.1605 - Expected Goals: [0.9]:[1.3]
+
+BHA:0.2771 / MUN:0.5382 / Draw: 0.1847 - Expected Goals: 1.0:1.4
+BUR:0.3932 / SOU:0.43 / Draw: 0.1768 - Expected Goals: 1.3:1.4
+CRY:0.4917 / EVE:0.3126 / Draw: 0.1957 - Expected Goals: 1.3:1.0
+TOT:0.6647 / NEW:0.1822 / Draw: 0.1531 - Expected Goals: 1.6:0.8
+WHU:0.3253 / WOL:0.5017 / Draw: 0.173 - Expected Goals: 1.3:1.5
+WBA:0.2148 / CHE:0.601 / Draw: 0.1842 - Expected Goals: 0.8:1.3
+SHU:0.7504 / LEE:0.1284 / Draw: 0.1212 - Expected Goals: 1.9:0.9
+FUL:0.4178 / AVL:0.3892 / Draw: 0.193 - Expected Goals: 1.5:1.5
+MCI:0.707 / LEI:0.1769 / Draw: 0.1161 - Expected Goals: 2.1:1.2
+BIR:0.2549 / ROT:0.5596 / Draw: 0.1855 - Expected Goals: 1.3:1.7

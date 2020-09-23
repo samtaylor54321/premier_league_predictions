@@ -1,5 +1,5 @@
 import numpy as np
-from math import floor
+from scipy.stats import hmean
 
 
 class Predictor:
@@ -13,23 +13,26 @@ class Predictor:
         home_goals_dict (dict): Dictionary which contains an array of home goals scored where each team name is a key
         home_goals_dict (dict): Dictionary which contains an array of away goals scored where each team name is a key
     """
-    def __init__(self, config, home_goals_dict, away_goals_dict):
+    def __init__(self, config, home_goals_scored_dict, home_goals_conceded_dict,
+                 away_goals_scored_dict, away_goals_conceded_dict):
         self.config = config
-        self.home_goals_dict = home_goals_dict
-        self.away_goals_dict = away_goals_dict
+        self.home_goals_scored_dict = home_goals_scored_dict
+        self.home_goals_conceded_dict = home_goals_conceded_dict
+        self.away_goals_scored_dict = away_goals_scored_dict
+        self.away_goals_conceded_dict = away_goals_conceded_dict
 
     def make_predictions(self):
 
         for i in range(1, 11):
             fixture = "game_" + str(i)
-            result = self.predict_match(self.config[fixture]["home"], self.config[fixture]["away"],
+            result = self._predict_match(self.config[fixture]["home"], self.config[fixture]["away"],
                                         self.config["simulations_to_run"])
             print(self.config[fixture]["home"] + ":" + str(result[0]) + " / " +
                   self.config[fixture]["away"] + ":" + str(result[1]) + " / " +
                   "Draw: " + str(result[2]) + " - Expected Goals: " + str(np.round(result[3], 1)) + ":" +
                   str(np.round(result[4], 1)))
 
-    def predict_match(self, home_team, away_team, sims):
+    def _predict_match(self, home_team, away_team, sims):
         """Predicts the outcome for an individual match
 
         Args:
@@ -42,20 +45,27 @@ class Predictor:
         """
         # Instantiate empty values
         away_win = 0
-        away_goals_scored = 0
+        away_goals_total = float(0)
         home_win = 0
-        home_goals_scored = 0
+        home_goals_total = float(0)
         draw = 0
 
         # Loop through simulations
         for i in range(sims):
-            # Chose random goals
-            away_goals = np.random.choice(self.away_goals_dict[away_team], 1)
-            home_goals = np.random.choice(self.home_goals_dict[home_team], 1)
+            # Chose home random goals
+            home_goals_scored = np.random.choice(self.home_goals_scored_dict[home_team], 1)
+            away_goals_conceded = np.random.choice(self.away_goals_conceded_dict[away_team], 1)
+            # Weight goals scored by the oppositions defensive record
+            home_goals = np.mean(np.array([home_goals_scored, away_goals_conceded]))
+            # Chose away random goals
+            away_goals_scored = np.random.choice(self.away_goals_scored_dict[away_team], 1)
+            home_goals_conceded = np.random.choice(self.home_goals_conceded_dict[home_team], 1)
+            # Weight goals scored by the oppositions defensive record
+            away_goals = np.mean(np.array([away_goals_scored, home_goals_conceded]))
 
             # Update goals scored for prediction
-            away_goals_scored += away_goals
-            home_goals_scored += home_goals
+            away_goals_total = away_goals_total + away_goals
+            home_goals_total = home_goals_total + home_goals
 
             # Update results
             if away_goals > home_goals:
@@ -65,4 +75,4 @@ class Predictor:
             else:
                 draw += 1
 
-        return home_win / sims, away_win / sims, draw / sims, home_goals_scored / sims, away_goals_scored / sims
+        return home_win / sims, away_win / sims, draw / sims, home_goals_total / sims, away_goals_total / sims
