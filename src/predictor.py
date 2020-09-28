@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.stats import hmean
 
 
 class Predictor:
@@ -10,69 +9,133 @@ class Predictor:
 
     Args:
         config (dict): Dictionary which contains the games to be played for a given week
-        home_goals_dict (dict): Dictionary which contains an array of home goals scored where each team name is a key
-        home_goals_dict (dict): Dictionary which contains an array of away goals scored where each team name is a key
+        home_goals_summarised (pd.DataFrame): DataFrame containing the summarised home goals for each team
+        away_goals_summarised (pd.DataFrame): DataFrame containing the summarised away goals from each team
     """
-    def __init__(self, config, home_goals_scored_dict, home_goals_conceded_dict,
-                 away_goals_scored_dict, away_goals_conceded_dict):
+    def __init__(self, config, home_goals_summarised, away_goals_summarised):
         self.config = config
-        self.home_goals_scored_dict = home_goals_scored_dict
-        self.home_goals_conceded_dict = home_goals_conceded_dict
-        self.away_goals_scored_dict = away_goals_scored_dict
-        self.away_goals_conceded_dict = away_goals_conceded_dict
+        self.home_goals_summarised = home_goals_summarised
+        self.away_goals_summarised = away_goals_summarised
 
     def make_predictions(self):
+        """Outputs predictions for a given set of fixtures
 
+        Notes:
+            Makes predictions for a set of fixtures defined in the config file.
+        """
+        # Loop through each of the fixtures in a given game week
         for i in range(1, 11):
+            # Get game reference
             fixture = "game_" + str(i)
-            result = self._predict_match(self.config[fixture]["home"], self.config[fixture]["away"],
-                                        self.config["simulations_to_run"])
-            print(self.config[fixture]["home"] + ":" + str(result[0]) + " / " +
-                  self.config[fixture]["away"] + ":" + str(result[1]) + " / " +
-                  "Draw: " + str(result[2]) + " - Expected Goals: " + str(np.round(result[3], 1)) + ":" +
-                  str(np.round(result[4], 1)))
+            # Get prediction for outcome
+            result = self._predict_match(self.config[fixture]["home"], self.config[fixture]["away"])
 
-    def _predict_match(self, home_team, away_team, sims):
+            # Get predictions for scoreline
+            home_goals_probs, away_goals_probs = self._predict_score(self.config[fixture]["home"],
+                                                                     self.config[fixture]["away"])
+            predicted_scoreline = self._generate_score_probabilities(home_goals_probs, away_goals_probs)
+
+            # Instantiate loop
+            possible_results = []
+            counter = 0
+
+            # Loop through scoreline dictionary
+            while counter < self.config["requested_results"]:
+                for key, value in predicted_scoreline.items():
+                    # If we don't have the required number keep going
+                    if counter < self.config["requested_results"]:
+                        possible_results.append(str(key) + " - " + str(round(predicted_scoreline[key], 3) * 100) + "%")
+                        counter += 1
+                    else:
+                        break
+
+            # Output results
+            print(self.config[fixture]["home"] + ":" + str(round(result[0], 1) * 100) + "% / " +
+                  self.config[fixture]["away"] + ":" + str(round(result[1], 1) * 100) + "% / " +
+                  "Draw: " + str(round(result[2], 1) * 100) + "%")
+            print(possible_results)
+
+    def _predict_match(self, home_team, away_team):
         """Predicts the outcome for an individual match
 
         Args:
-            home_team (str): 3 letter abb of the home team
-            away_team (str): 3 letter abb of the away team
-            sims (int): Number of simulations to be run
+            home_team (str): Name of the home team in the fixture
+            away_team (str): Name of the away team in the fixture
 
         Return:
             tuple: containing the probability of a home win, away win or draw
         """
-        # Instantiate empty values
-        away_win = 0
-        away_goals_total = float(0)
-        home_win = 0
-        home_goals_total = float(0)
+        # Instantiate empty results
+        home_wins = 0
+        home_score = 0
+        away_wins = 0
+        away_score = 0
         draw = 0
 
-        # Loop through simulations
-        for i in range(sims):
-            # Chose home random goals
-            home_goals_scored = np.random.choice(self.home_goals_scored_dict[home_team], 1)
-            away_goals_conceded = np.random.choice(self.away_goals_conceded_dict[away_team], 1)
-            # Weight goals scored by the oppositions defensive record
-            home_goals = np.mean(np.array([home_goals_scored, away_goals_conceded]))
-            # Chose away random goals
-            away_goals_scored = np.random.choice(self.away_goals_scored_dict[away_team], 1)
-            home_goals_conceded = np.random.choice(self.home_goals_conceded_dict[home_team], 1)
-            # Weight goals scored by the oppositions defensive record
-            away_goals = np.mean(np.array([away_goals_scored, home_goals_conceded]))
+        # Get the home and away team's location in the result
+        home_loc = self.home_goals_summarised.index.get_loc(home_team)
+        away_loc = self.away_goals_summarised.index.get_loc(away_team)
 
-            # Update goals scored for prediction
-            away_goals_total = away_goals_total + away_goals
-            home_goals_total = home_goals_total + home_goals
+        # Loop through required number of simulations
+        for i in range(self.config["simulations_to_run"]):
+            # Extract away goals
+            away_goals_scored = np.random.poisson(self.away_goals_summarised.iloc[away_loc, 1], 1)
+            home_goals_conceded = np.random.poisson(self.home_goals_summarised.iloc[home_loc, 1], 1)
+            # Weight away goals
+            away_goals_weighted = np.mean([away_goals_scored, home_goals_conceded])
+            # Extract home goals
+            home_goals_scored = np.random.poisson(self.home_goals_summarised.iloc[home_loc, 0], 1)
+            away_goals_conceded = np.random.poisson(self.away_goals_summarised.iloc[away_loc, 0])
+            # Weight away goals
+            home_goals_weighted = np.mean([home_goals_scored, away_goals_conceded])
 
-            # Update results
-            if away_goals > home_goals:
-                away_win += 1
-            elif home_goals > away_goals:
-                home_win += 1
+            # Add these results to tally
+            home_score += home_goals_scored
+            away_score += away_goals_scored
+
+            # Update results with outcome of the simulation
+            if home_goals_weighted > away_goals_weighted:
+                home_wins += 1
+            elif home_goals_weighted < away_goals_weighted:
+                away_wins += 1
             else:
                 draw += 1
 
-        return home_win / sims, away_win / sims, draw / sims, home_goals_total / sims, away_goals_total / sims
+        return home_wins / self.config["simulations_to_run"], away_wins / self.config["simulations_to_run"], \
+            draw / self.config["simulations_to_run"]
+
+    def _predict_score(self, home_team, away_team):
+
+        home_loc = self.home_goals_summarised.index.get_loc(home_team)
+        home_goals_distribution = np.random.poisson(self.home_goals_summarised.iloc[home_loc, 0],
+                                                    self.config["simulations_to_run"])
+
+        away_loc = self.away_goals_summarised.index.get_loc(away_team)
+        away_goals_distribution = np.random.poisson(self.away_goals_summarised.iloc[away_loc, 1],
+                                                    self.config["simulations_to_run"])
+
+        home_goals_probs = {}
+
+        for goals in range(10):
+            home_goals_probs[goals] = np.mean(goals == home_goals_distribution)
+
+        away_goals_probs = {}
+
+        for goals in range(10):
+            away_goals_probs[goals] = np.mean(goals == away_goals_distribution)
+
+        return home_goals_probs, away_goals_probs
+
+    def _generate_score_probabilities(self, home_goals_probs, away_goals_probs):
+        score_probabilities = {}
+
+        for home_goals in range(10):
+            for away_goals in range(10):
+                score_probabilities[str(home_goals) + "-" + str(away_goals)] = round(
+                    home_goals_probs[home_goals] * away_goals_probs[away_goals], 3)
+
+        score_probabilities = {k: v for k, v in
+                               sorted(score_probabilities.items(), key=lambda item: item[1], reverse=True)}
+
+        return score_probabilities
+
