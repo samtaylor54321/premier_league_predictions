@@ -5,6 +5,8 @@ URL : 'https://www.skysports.com/'
 seasons : ["","2019-20"]
 # Divisions to include within the scraping process
 divisions : ["premier-league","championship", "league-1", "league-2"]
+# Number of previous results to take into account
+form: 5
 # Matches to predict
 game_1:
   home: "Brighton and Hove Albion"
@@ -38,4 +40,5 @@ game_10:
   away: "Rotherham United"
 # Number of simulations to be run
 simulations_to_run: 10000
+# Top N scorelines to be produced
 requested_results: 5

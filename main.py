@@ -14,8 +14,8 @@ def main():
     dataset = scrapper.build_dataset()
 
     # Generate summary datasets to be used for predictions
-    home_goals_summarised = dataset.groupby(["home_team"]).head(5).groupby(["home_team"]).agg([np.mean])
-    away_goals_summarised = dataset.groupby(["home_team"]).head(5).groupby(["away_team"]).agg([np.mean])
+    home_goals_summarised = dataset.groupby(["home_team"]).head(config["form"]).groupby(["home_team"]).agg([np.mean])
+    away_goals_summarised = dataset.groupby(["home_team"]).head(config["form"]).groupby(["away_team"]).agg([np.mean])
 
     # Make predictions for the gameweek
     predictor = Predictor(config, home_goals_summarised, away_goals_summarised)

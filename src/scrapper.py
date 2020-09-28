@@ -6,6 +6,7 @@ from re import search
 
 class Scrapper:
     def __init__(self, config):
+        """Scrapes Sky Sports to build a dataset to used for prediction"""
         self.config = config
 
     def build_dataset(self):
