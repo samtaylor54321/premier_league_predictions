@@ -1,31 +1,44 @@
-simulations_to_run: 10000
+#### Ford Football Predictions League ####
+# URL which is the source of the data
+URL : 'https://www.skysports.com/'
+# Seasons to extract data from
+seasons : ["","2019-20"]
+# Divisions to include within the scraping process
+divisions : ["premier-league","championship", "league-1", "league-2"]
+# Number of previous results to take into account
+form: 5
+# Matches to predict
 game_1:
-  home: "BHA"
-  away: "MUN"
+  home: "Brighton and Hove Albion"
+  away: "Manchester United"
 game_2:
-  home: "BUR"
-  away: "SOU"
+  home: "Burnley"
+  away: "Southampton"
 game_3:
-  home: "CRY"
-  away: "EVE"
+  home: "Crystal Palace"
+  away: "Everton"
 game_4:
-  home: "TOT"
-  away: "NEW"
+  home: "Tottenham Hotspur"
+  away: "Newcastle United"
 game_5:
-  home: "WHU"
-  away: "WOL"
+  home: "West Ham United"
+  away: "Wolverhampton Wanderers"
 game_6:
-  home: "WBA"
-  away: "CHE"
+  home: "West Bromwich Albion"
+  away: "Chelsea"
 game_7:
-  home: "SHU"
-  away: "LEE"
+  home: "Sheffield United"
+  away: "Leeds United"
 game_8:
-  home: "FUL"
-  away: "AVL"
+  home: "Fulham"
+  away: "Aston Villa"
 game_9:
-  home: "MCI"
-  away: "LEI"
+  home: "Manchester City"
+  away: "Leicester City"
 game_10:
-  home: "BIR"
-  away: "ROT"
+  home: "Birmingham City"
+  away: "Rotherham United"
+# Number of simulations to be run
+simulations_to_run: 10000
+# Top N scorelines to be produced
+requested_results: 5

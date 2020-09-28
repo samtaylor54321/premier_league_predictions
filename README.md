@@ -40,13 +40,17 @@ Score - 15pts
 
 |         Probability                    |           Score                 | Result |
 |----------------------------------------|---------------------------------|--------|
-|BHA:0.2752 / MUN:0.5484 / Draw: 0.1764  | - Expected Goals: 1.0:1.4       |        |
-|BUR:0.3879 / SOU:0.4326 / Draw: 0.1795  | - Expected Goals: 1.3:1.4       |        | 
-|CRY:0.4929 / EVE:0.3126 / Draw: 0.1945  | - Expected Goals: 1.3:1.0       |        |
-|TOT:0.6758 / NEW:0.174 / Draw: 0.1502   | - Expected Goals: 1.6:0.8       |        |
-|WHU:0.3281 / WOL:0.4969 / Draw: 0.175   | - Expected Goals: 1.3:1.5       |        |
-|WBA:0.2247 / CHE:0.5944 / Draw: 0.1809  | - Expected Goals: 0.8:1.3       |        |
-|SHU:0.7446 / LEE:0.1332 / Draw: 0.1222  | - Expected Goals: 1.9:0.9       |        |
-|FUL:0.4162 / AVL:0.3966 / Draw: 0.1872  | - Expected Goals: 1.5:1.5       |        |
-|MCI:0.7112 / LEI:0.1728 / Draw: 0.116   | - Expected Goals: 2.1:1.2       |        |
-|BIR:0.2532 / ROT:0.5594 / Draw: 0.1874  | - Expected Goals: 1.3:1.7       |        |
+|BHA:0.2752 / MUN:0.5484 / Draw: 0.1764  | - Expected Goals: 1.0:1.4       |  2-3   |
+|BUR:0.3879 / SOU:0.4326 / Draw: 0.1795  | - Expected Goals: 1.3:1.4       |  0-1   | 
+|CRY:0.4929 / EVE:0.3126 / Draw: 0.1945  | - Expected Goals: 1.3:1.0       |  0-1   |
+|TOT:0.6758 / NEW:0.174 / Draw: 0.1502   | - Expected Goals: 1.6:0.8       |  1-1   |
+|WHU:0.3281 / WOL:0.4969 / Draw: 0.175   | - Expected Goals: 1.3:1.5       |  4-0   |
+|WBA:0.2247 / CHE:0.5944 / Draw: 0.1809  | - Expected Goals: 0.8:1.3       |  3-3   |
+|SHU:0.7446 / LEE:0.1332 / Draw: 0.1222  | - Expected Goals: 1.9:0.9       |  0-1   |
+|FUL:0.4162 / AVL:0.3966 / Draw: 0.1872  | - Expected Goals: 1.5:1.5       |  0-2   |
+|MCI:0.7112 / LEI:0.1728 / Draw: 0.116   | - Expected Goals: 2.1:1.2       |  2-5   |
+|BIR:0.2532 / ROT:0.5594 / Draw: 0.1874  | - Expected Goals: 1.3:1.7       |  1-1   |
+
+Score - 2pts
+
+## Week Four Predictions
