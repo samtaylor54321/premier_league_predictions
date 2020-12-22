@@ -50,10 +50,12 @@ class Predictor:
                         break
 
             # Output results
-            print(self.config[fixture]["home"] + ":" + str(round(result[0], 1) * 100) + "% / " +
-                  self.config[fixture]["away"] + ":" + str(round(result[1], 1) * 100) + "% / " +
-                  "Draw: " + str(round(result[2], 1) * 100) + "%")
-            print(possible_results)
+            print(fixture)
+            print("Result Probabilities : " + self.config[fixture]["home"] + ":" + str(round(result[0], 2) * 100) + "% / " +
+                  self.config[fixture]["away"] + ":" + str(round(result[1], 2) * 100) + "% / " +
+                  "Draw: " + str(round(result[2], 2) * 100) + "%")
+            print("Scoreline Probabilities : ", possible_results)
+            print("---------------------------")
 
     def _predict_match(self, home_team, away_team):
         """Predicts the outcome for an individual match
