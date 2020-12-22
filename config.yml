@@ -2,42 +2,42 @@
 # URL which is the source of the data
 URL : 'https://www.skysports.com/'
 # Seasons to extract data from
-seasons : ["","2019-20"]
-# Divisions to include within the scraping process
-divisions : ["premier-league","championship", "league-1", "league-2"]
+seasons : ["2020-21"]
+# Divisions to include within the scraping process "premier-league","championship" "league-1", "league-2"
+divisions : ["premier-league", "championship"]
 # Number of previous results to take into account
-form: 3
+form: 5
 # Matches to predict
 game_1:
-  home: "West Ham United"
-  away: "Manchester City"
+  home: "Leicester City"
+  away: "Manchester United"
 game_2:
-  home: "Arsenal"
-  away: "Leicester City"
-game_3:
   home: "Aston Villa"
-  away: "Leeds United"
-game_4:
-  home: "Brighton and Hove Albion"
-  away: "West Bromwich Albion"
-game_5:
-  home: "Fulham"
   away: "Crystal Palace"
-game_6:
-  home: "Liverpool"
-  away: "Sheffield United"
-game_7:
-  home: "Manchester United"
+game_3:
+  home: "Fulham"
+  away: "Southampton"
+game_4:
+  home: "Arsenal"
   away: "Chelsea"
-game_8:
-  home: "Southampton"
-  away: "Everton"
-game_9:
-  home: "Wolverhampton Wanderers"
+game_5:
+  home: "Manchester City"
   away: "Newcastle United"
+game_6:
+  home: "Sheffield United"
+  away: "Everton"
+game_7:
+  home: "Leeds United"
+  away: "Burnley"
+game_8:
+  home: "West Ham United"
+  away: "Brighton and Hove Albion"
+game_9:
+  home: "Liverpool"
+  away: "West Bromwich Albion"
 game_10:
-  home: "Stoke City"
-  away: "Brentford"
+  home: "Wolverhampton Wanderers"
+  away: "Tottenham Hotspur"
 # Number of simulations to be run
 simulations_to_run: 100000
 # Top N scorelines to be produced
