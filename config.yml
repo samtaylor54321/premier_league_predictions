@@ -4,40 +4,40 @@ URL : 'https://www.skysports.com/'
 # Seasons to extract data from
 seasons : ["2020-21"]
 # Divisions to include within the scraping process "premier-league","championship" "league-1", "league-2"
-divisions : ["premier-league"]
+divisions : ["premier-league", "championship"]
 # Number of previous results to take into account
-form: 8
+form: 5
 # Matches to predict
 game_1:
-  home: "Brighton and Hove Albion"
-  away: "Wolverhampton Wanderers"
+  home: "Wolverhampton Wanderers"
+  away: "West Bromwich Albion"
 game_2:
-  home: "Burnley"
-  away: "Fulham"
+  home: "Leeds United"
+  away: "Brighton and Hove Albion"
 game_3:
-  home: "Chelsea"
-  away: "Manchester City"
+  home: "West Ham United"
+  away: "Burnley"
 game_4:
-  home: "Crystal Palace"
-  away: "Sheffield United"
+  home: "Aston Villa"
+  away: "Everton"
 game_5:
-  home: "Everton"
-  away: "West Ham United"
+  home: "Leicester City"
+  away: "Southampton"
 game_6:
-  home: "Manchester United"
-  away: "Aston Villa"
+  home: "Sheffield United"
+  away: "Tottenham Hotspur"
 game_7:
-  home: "Newcastle United"
-  away: "Leicester City"
+  home: "Liverpool"
+  away: "Manchester United"
 game_8:
-  home: "Southampton"
-  away: "Liverpool"
+  home: "Manchester City"
+  away: "Crystal Palace"
 game_9:
-  home: "Tottenham Hotspur"
-  away: "Leeds United"
+  home: "Coventry City"
+  away: "Sheffield Wednesday"
 game_10:
-  home: "West Bromwich Albion"
-  away: "Arsenal"
+  home: "Queens Park Rangers"
+  away: "Wycombe Wanderers"
 # Number of simulations to be run
 simulations_to_run: 100000
 # Top N scorelines to be produced
