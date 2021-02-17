@@ -13,12 +13,30 @@ def main():
     scrapper = Scrapper(config)
     dataset = scrapper.build_dataset()
 
-    # Generate summary datasets to be used for predictions
-    home_goals_summarised = dataset.groupby(["home_team"]).head(config["form"]).groupby(["home_team"]).agg([np.mean])
-    away_goals_summarised = dataset.groupby(["home_team"]).head(config["form"]).groupby(["away_team"]).agg([np.mean])
+    # Extract goal summary from dataset
+    teams = dataset["home_team"].unique()
+    goal_summary = {}
+
+    for team in teams:
+        goal_summary[team] = dataset[(dataset["home_team"] == team) | (dataset["away_team"] == team)].\
+            head(config["form"])
+
+        goals_scored = []
+        goals_conceeded = []
+
+        for index, row in goal_summary[team].iterrows():
+            if row["home_team"] == team:
+                goals_scored.append(row["home_goals"])
+                goals_conceeded.append(row["away_goals"])
+            else:
+                goals_scored.append(row["away_goals"])
+                goals_conceeded.append(row["home_goals"])
+
+        goal_summary[team] = {"goals_scored": np.mean(goals_scored),
+                              "goals_conceeded": np.mean(goals_conceeded)}
 
     # Make predictions for the gameweek
-    predictor = Predictor(config, home_goals_summarised, away_goals_summarised)
+    predictor = Predictor(config, goal_summary)
     predictor.make_predictions()
 
 
