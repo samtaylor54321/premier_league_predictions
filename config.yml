@@ -6,38 +6,38 @@ seasons : ["2020-21"]
 # Divisions to include within the scraping process "premier-league","championship" "league-1", "league-2"
 divisions : ["premier-league", "championship"]
 # Number of previous results to take into account
-form: 10
+form: 5
 # Matches to predict
 game_1:
-  home: "Southampton"
-  away: "Chelsea"
-game_2:
   home: "Burnley"
-  away: "West Bromwich Albion"
+  away: "Arsenal"
+game_2:
+  home: "Sheffield United"
+  away: "Southampton"
 game_3:
-  home: "Fulham"
-  away: "Sheffield United"
+  home: "Aston Villa"
+  away: "Wolverhampton Wanderers"
 game_4:
-  home: "West Ham United"
-  away: "Tottenham Hotspur"
+  home: "Brighton and Hove Albion"
+  away: "Leicester City"
 game_5:
-  home: "Wolverhampton Wanderers"
-  away: "Leeds United"
+  home: "West Bromwich Albion"
+  away: "Newcastle United"
 game_6:
   home: "Liverpool"
-  away: "Everton"
+  away: "Fulham"
 game_7:
-  home: "Aston Villa"
-  away: "Leicester City"
+  home: "Manchester City"
+  away: "Manchester United"
 game_8:
-  home: "Arsenal"
-  away: "Manchester City"
+  home: "Tottenham Hotspur"
+  away: "Crystal Palace"
 game_9:
-  home: "Manchester United"
-  away: "Newcastle United"
-game_10:
   home: "Bristol City"
-  away: "Barnsley"
+  away: "Queens Park Rangers"
+game_10:
+  home: "Swansea City"
+  away: "Middlesbrough"
 # Number of simulations to be run
 simulations_to_run: 100000
 # Top N scorelines to be produced
