@@ -74,9 +74,9 @@ class Predictor:
         # Loop through required number of simulations
         for i in range(self.config["simulations_to_run"]):
             # Calculate goals
-            home_goals = np.random.poisson(hmean([self.goals_summarised[home_team]["goals_scored"],
+            home_goals = np.random.poisson(np.mean([self.goals_summarised[home_team]["goals_scored"],
                                                   self.goals_summarised[away_team]["goals_conceeded"]]), 1)
-            away_goals = np.random.poisson(hmean([self.goals_summarised[away_team]["goals_scored"],
+            away_goals = np.random.poisson(np.mean([self.goals_summarised[away_team]["goals_scored"],
                                                   self.goals_summarised[home_team]["goals_conceeded"]]), 1)
 
             # Update results with outcome of the simulation
@@ -101,12 +101,12 @@ class Predictor:
             tuple: contains the goal probabilites for the home and away teams
         """
         # Build distribution for Home team
-        home_goals_distribution = np.random.poisson(hmean([self.goals_summarised[home_team]["goals_scored"],
+        home_goals_distribution = np.random.poisson(np.mean([self.goals_summarised[home_team]["goals_scored"],
                                                            self.goals_summarised[away_team]["goals_conceeded"]]),
                                                     self.config["simulations_to_run"])
 
         # Build distribution for Away team
-        away_goals_distribution = np.random.poisson(hmean([self.goals_summarised[away_team]["goals_scored"],
+        away_goals_distribution = np.random.poisson(np.mean([self.goals_summarised[away_team]["goals_scored"],
                                                            self.goals_summarised[home_team]["goals_conceeded"]]),
                                                     self.config["simulations_to_run"])
         # Instantiate empty dictionary

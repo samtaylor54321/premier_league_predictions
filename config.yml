@@ -9,35 +9,35 @@ divisions : ["premier-league", "championship"]
 form: 5
 # Matches to predict
 game_1:
-  home: "Burnley"
-  away: "Arsenal"
-game_2:
-  home: "Sheffield United"
+  home: "Bournemouth"
   away: "Southampton"
+game_2:
+  home: "Everton"
+  away: "Manchester City"
 game_3:
-  home: "Aston Villa"
-  away: "Wolverhampton Wanderers"
+  home: "Chelsea"
+  away: "Sheffield United"
 game_4:
-  home: "Brighton and Hove Albion"
-  away: "Leicester City"
+  home: "Leicester City"
+  away: "Manchester United"
 game_5:
-  home: "West Bromwich Albion"
+  home: "Brighton and Hove Albion"
   away: "Newcastle United"
 game_6:
-  home: "Liverpool"
-  away: "Fulham"
+  home: "West Ham United"
+  away: "Arsenal"
 game_7:
-  home: "Manchester City"
-  away: "Manchester United"
+  home: "Aston Villa"
+  away: "Tottenham Hotspur"
 game_8:
-  home: "Tottenham Hotspur"
-  away: "Crystal Palace"
+  home: "Barnsley"
+  away: "Sheffield Wednesday"
 game_9:
-  home: "Bristol City"
-  away: "Queens Park Rangers"
+  home: "Norwich City"
+  away: "Blackburn Rovers"
 game_10:
-  home: "Swansea City"
-  away: "Middlesbrough"
+  home: "Preston North End"
+  away: "Luton Town"
 # Number of simulations to be run
 simulations_to_run: 100000
 # Top N scorelines to be produced
