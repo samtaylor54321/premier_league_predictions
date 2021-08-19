@@ -4,24 +4,24 @@ URL : 'https://www.skysports.com/'
 # Seasons to extract data from
 seasons : ["2020-21"]
 # Divisions to include within the scraping process "premier-league","championship" "league-1", "league-2"
-divisions : ["premier-league", "championship"]
+divisions : ["league-2"]
 # Number of previous results to take into account
 form: 5
 # Matches to predict
 game_1:
-  home: "Bournemouth"
-  away: "Southampton"
+  home: "Forest Green"
+  away: "Bolton Wanderers"
 game_2:
-  home: "Everton"
-  away: "Manchester City"
+  home: "Exeter City"
+  away: "Salford City"
 game_3:
-  home: "Chelsea"
-  away: "Sheffield United"
+  home: "Colchester United"
+  away: "Bradford"
 game_4:
-  home: "Leicester City"
-  away: "Manchester United"
+  home: "Grimsby Town"
+  away: "Walsall"
 game_5:
-  home: "Brighton and Hove Albion"
+  home: "Harrogate Town"
   away: "Newcastle United"
 game_6:
   home: "West Ham United"
