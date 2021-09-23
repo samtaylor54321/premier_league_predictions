@@ -18,7 +18,7 @@ class Scrapper:
 
         return result_elems
 
-    def extract_data(self, result_elems):
+    def extract_core_data(self, result_elems):
 
         index_start = 0
         number_of_elements = len(result_elems)
@@ -166,7 +166,7 @@ class Scrapper:
 
         return fixture
 
-    def _extract_oppg(self, url):
+    def extract_oppg_data(self, url):
         relative_performance = requests.get(url)
 
         rp_selector = Selector(relative_performance)
@@ -231,7 +231,7 @@ oppg_results = pd.DataFrame(columns=["oppg"])
 for url in rp_urls:
     print(f"extracting results for {url}")
     try:
-        df = data_scrapper.extract_oppg(url)
+        df = data_scrapper.extract_oppg_data(url)
         oppg_results = pd.concat([oppg_results, df], axis=0)
     except (ValueError):
         print(f"unable to extract results for {url}")
@@ -263,7 +263,7 @@ for url in base_urls:
             away_table,
             goals_scored,
             goals_conceded,
-        ) = data_scrapper.extract_data(result_elems)
+        ) = data_scrapper.extract_core_data(result_elems)
     except (ValueError):
         print("Unable to parse data for " + url)
 
