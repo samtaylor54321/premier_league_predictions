@@ -18,8 +18,9 @@ def main():
     goal_summary = {}
 
     for team in teams:
-        goal_summary[team] = dataset[(dataset["home_team"] == team) | (dataset["away_team"] == team)].\
-            head(config["form"])
+        goal_summary[team] = dataset[
+            (dataset["home_team"] == team) | (dataset["away_team"] == team)
+        ].head(config["form"])
 
         goals_scored = []
         goals_conceeded = []
@@ -32,8 +33,10 @@ def main():
                 goals_scored.append(row["away_goals"])
                 goals_conceeded.append(row["home_goals"])
 
-        goal_summary[team] = {"goals_scored": np.mean(goals_scored),
-                              "goals_conceeded": np.mean(goals_conceeded)}
+        goal_summary[team] = {
+            "goals_scored": np.mean(goals_scored),
+            "goals_conceeded": np.mean(goals_conceeded),
+        }
 
     # Make predictions for the gameweek
     predictor = Predictor(config, goal_summary)
