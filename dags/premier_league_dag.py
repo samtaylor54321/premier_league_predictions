@@ -344,7 +344,7 @@ def main():
 
     dt = datetime.today().strftime("%Y-%m-%d")
 
-    todays_fixtures.to_csv("/opt/airflow/" + str(dt) + "_fixtures.csv")
+    todays_fixtures.to_csv("/opt/airflow/data/" + str(dt) + "_fixtures.csv")
 
     results_yesterday = requests.get(
         "https://www.soccerstats.com/matches.asp?matchday=0&daym=yesterday"
@@ -415,7 +415,7 @@ def main():
 
     try:
         yesterdays_fixtures = pd.read_csv(
-            "/opt/airflow/" + yesterday + "_fixtures.csv",
+            "/opt/airflow/data/" + yesterday + "_fixtures.csv",
             index_col=0,
         )
 
@@ -427,7 +427,9 @@ def main():
             how="left",
         )
 
-        yesterdays_fixtures.to_csv("/opt/airflow/" + str(yesterday) + "_fixtures.csv")
+        yesterdays_fixtures.to_csv(
+            "/opt/airflow/data/" + str(yesterday) + "_fixtures.csv"
+        )
     except (FileNotFoundError):
         print(f"Unable to find csv for {yesterday}")
 
@@ -490,7 +492,7 @@ def main():
 
     week_31_fixtures.index = index
 
-    week_31_fixtures.to_csv("/opt/airflow/current_gameweek.csv")
+    week_31_fixtures.to_csv("/opt/airflow/data/current_gameweek.csv")
 
 
 with DAG(
