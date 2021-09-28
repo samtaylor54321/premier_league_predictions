@@ -1,10 +1,23 @@
 import requests
+import pandas as pd
+import re
+from airflow import DAG
 from bs4 import BeautifulSoup
 from scrapy import Selector
-import pandas as pd
-import numpy as np
-import re
 from datetime import datetime, timedelta
+from airflow.operators.python import PythonOperator
+from airflow.utils.dates import days_ago
+
+
+default_args = {
+    "owner": "samtaylor",
+    "depends_on_past": False,
+    "email": ["airflow@example.com"],
+    "email_on_failure": False,
+    "email_on_retry": False,
+    "retries": 1,
+    "retry_delay": timedelta(minutes=5),
+}
 
 
 class Scrapper:
@@ -210,279 +223,289 @@ class Scrapper:
         return teams_oppg
 
 
-data_scrapper = Scrapper()
+def main():
+    data_scrapper = Scrapper()
 
-# Get URLs for leagues
-leagues = requests.get("https://www.soccerstats.com/leagues.asp")
+    # Get URLs for leagues
+    leagues = requests.get("https://www.soccerstats.com/leagues.asp")
 
-leagues_sel = Selector(leagues)
+    leagues_sel = Selector(leagues)
 
-links = leagues_sel.xpath("//a/@href").extract()
+    links = leagues_sel.xpath("//a/@href").extract()
 
-urls = [
-    "https://www.soccerstats.com/" + link for link in links if link[0:6] == "latest"
-]
+    urls = [
+        "https://www.soccerstats.com/" + link for link in links if link[0:6] == "latest"
+    ]
 
-# Build relative performance dataset
-rp_urls = [url.replace("latest", "table") + "&tid=rp" for url in urls]
+    # Build relative performance dataset
+    rp_urls = [url.replace("latest", "table") + "&tid=rp" for url in urls]
 
-oppg_results = pd.DataFrame(columns=["oppg"])
+    oppg_results = pd.DataFrame(columns=["oppg"])
 
-for url in rp_urls:
-    print(f"extracting results for {url}")
-    try:
-        df = data_scrapper.extract_oppg_data(url)
-        oppg_results = pd.concat([oppg_results, df], axis=0)
-    except (ValueError):
-        print(f"unable to extract results for {url}")
+    for url in rp_urls:
+        print(f"extracting results for {url}")
+        try:
+            df = data_scrapper.extract_oppg_data(url)
+            oppg_results = pd.concat([oppg_results, df], axis=0)
+        except (ValueError):
+            print(f"unable to extract results for {url}")
 
+    oppg_results["team"] = oppg_results.index
+    oppg_results = oppg_results.drop_duplicates()
+    oppg_results = oppg_results[~oppg_results.index.duplicated(keep="first")]
+    oppg_results = oppg_results.drop(["team"], axis=1)
 
-oppg_results["team"] = oppg_results.index
-oppg_results = oppg_results.drop_duplicates()
-oppg_results = oppg_results[~oppg_results.index.duplicated(keep="first")]
-oppg_results = oppg_results.drop(["team"], axis=1)
+    # Build main dataset
+    base_urls = [url.replace("latest", "formtable") for url in urls]
 
-# Build main dataset
-base_urls = [url.replace("latest", "formtable") for url in urls]
+    all_results = {}
 
-all_results = {}
+    for url in base_urls:
+        print(url)
+        result_elems = data_scrapper.parse_html(url)
 
-for url in base_urls:
-    print(url)
-    result_elems = data_scrapper.parse_html(url)
+        if len(result_elems) == 0:
+            print("No results for " + url)
+            pass
 
-    if len(result_elems) == 0:
-        print("No results for " + url)
-        pass
+        try:
+            (
+                league_table,
+                form_table,
+                home_table,
+                away_table,
+                goals_scored,
+                goals_conceded,
+            ) = data_scrapper.extract_core_data(result_elems)
+        except (ValueError):
+            print("Unable to parse data for " + url)
 
-    try:
-        (
+        dataset = data_scrapper.build_dataset(
             league_table,
             form_table,
             home_table,
             away_table,
             goals_scored,
             goals_conceded,
-        ) = data_scrapper.extract_core_data(result_elems)
-    except (ValueError):
-        print("Unable to parse data for " + url)
+        )
+        all_results.update(dataset)
 
-    dataset = data_scrapper.build_dataset(
-        league_table, form_table, home_table, away_table, goals_scored, goals_conceded
+    results = pd.DataFrame.from_dict(all_results, orient="index")
+
+    results = results.merge(oppg_results, how="left", left_index=True, right_index=True)
+
+    # Build dataset for todays results
+    todays_matches = requests.get("https://www.soccerstats.com/matches.asp?matchday=1")
+    match_soup = BeautifulSoup(todays_matches.content, "html.parser")
+
+    matches_today = match_soup.find_all(class_="steam")
+
+    match_home_team = []
+    match_away_team = []
+
+    for i in range(len(matches_today)):
+        if i % 2 == 0:
+            match_home_team.append(matches_today[i].text)
+        else:
+            match_away_team.append(matches_today[i].text)
+
+    todays_fixtures = pd.DataFrame(
+        columns=[
+            "ppg_home_team",
+            "recent_ppg_home_team",
+            "home_ppg_home_team",
+            "away_ppg_home_team",
+            "goals_scored_home_team",
+            "goals_conceded_home_team",
+            "oppg_home_team",
+            "ppg_away_team",
+            "recent_ppg_away_team",
+            "home_ppg_away_team",
+            "away_ppg_away_team",
+            "goals_scored_away_team",
+            "goals_conceded_away_team",
+            "oppg_away_team",
+        ]
     )
-    all_results.update(dataset)
 
-results = pd.DataFrame.from_dict(all_results, orient="index")
+    index = []
+    bad_results = []
+    i = 0
 
-results = results.merge(oppg_results, how="left", left_index=True, right_index=True)
+    for home_team, away_team in zip(match_home_team, match_away_team):
+        if home_team in results.index and away_team in results.index:
+            result = data_scrapper.build_fixture(results, home_team, away_team)
+            todays_fixtures = pd.concat([todays_fixtures, result], ignore_index=True)
+            index.append(home_team + " vs " + away_team)
+        else:
+            bad_results.append(f"Unable to build result for {home_team} vs {away_team}")
 
+    todays_fixtures.index = index
 
-# Build dataset for todays results
-todays_matches = requests.get("https://www.soccerstats.com/matches.asp?matchday=1")
-match_soup = BeautifulSoup(todays_matches.content, "html.parser")
+    dt = datetime.today().strftime("%Y-%m-%d")
 
-matches_today = match_soup.find_all(class_="steam")
+    todays_fixtures.to_csv("/opt/airflow/" + str(dt) + "_fixtures.csv")
 
-match_home_team = []
-match_away_team = []
+    results_yesterday = requests.get(
+        "https://www.soccerstats.com/matches.asp?matchday=0&daym=yesterday"
+    )
 
-for i in range(len(matches_today)):
-    if i % 2 == 0:
-        match_home_team.append(matches_today[i].text)
-    else:
-        match_away_team.append(matches_today[i].text)
+    sel = Selector(results_yesterday)
 
-todays_fixtures = pd.DataFrame(
-    columns=[
-        "ppg_home_team",
-        "recent_ppg_home_team",
-        "home_ppg_home_team",
-        "away_ppg_home_team",
-        "goals_scored_home_team",
-        "goals_conceded_home_team",
-        "oppg_home_team",
-        "ppg_away_team",
-        "recent_ppg_away_team",
-        "home_ppg_away_team",
-        "away_ppg_away_team",
-        "goals_scored_away_team",
-        "goals_conceded_away_team",
-        "oppg_away_team",
-    ]
-)
+    high_level = sel.xpath("//tr[@height=18]/td[@class='steam']/text()").extract()
 
-index = []
-bad_results = []
-i = 0
+    scores = sel.xpath("//tr[@height=18]/td[2]").extract()
 
-for home_team, away_team in zip(match_home_team, match_away_team):
-    if home_team in results.index and away_team in results.index:
-        result = data_scrapper.build_fixture(results, home_team, away_team)
-        todays_fixtures = pd.concat([todays_fixtures, result], ignore_index=True)
-        index.append(home_team + " vs " + away_team)
-    else:
-        bad_results.append(f"Unable to build result for {home_team} vs {away_team}")
+    matchday_scores = []
 
-todays_fixtures.index = index
+    for score in scores:
+        if score.find("<b>(.+?)</b>"):
+            try:
+                matchday_scores.append(re.search("<b>(.+?)</b>", score).group(1))
+            except (AttributeError):
+                matchday_scores.append("pp")
+        else:
+            print("pp")
 
-dt = datetime.today().strftime("%Y-%m-%d")
+    scores_home_team = []
+    scores_away_team = []
 
-todays_fixtures.to_csv(
-    "/Users/sam/Documents/projects/premier_league_predictions/data/"
-    + str(dt)
-    + "_fixtures.csv"
-)
+    for i in range(len(matchday_scores)):
+        if i % 2 == 0:
+            scores_home_team.append(matchday_scores[i])
+        else:
+            scores_away_team.append(matchday_scores[i])
 
-results_yesterday = requests.get(
-    "https://www.soccerstats.com/matches.asp?matchday=0&daym=yesterday"
-)
+    match_result = []
 
-sel = Selector(results_yesterday)
-
-high_level = sel.xpath("//tr[@height=18]/td[@class='steam']/text()").extract()
-
-scores = sel.xpath("//tr[@height=18]/td[2]").extract()
-
-matchday_scores = []
-
-for score in scores:
-    if score.find("<b>(.+?)</b>"):
+    for home, away in zip(scores_home_team, scores_away_team):
         try:
-            matchday_scores.append(re.search("<b>(.+?)</b>", score).group(1))
-        except (AttributeError):
-            matchday_scores.append("pp")
-    else:
-        print("pp")
+            if int(home) > int(away):
+                match_result.append("home")
+            if int(away) > int(home):
+                match_result.append("away")
+            if int(home) == int(away):
+                match_result.append("draw")
+        except (ValueError):
+            match_result.append("pp")
 
-scores_home_team = []
-scores_away_team = []
+    result_home_team = []
+    result_away_team = []
 
-for i in range(len(matchday_scores)):
-    if i % 2 == 0:
-        scores_home_team.append(matchday_scores[i])
-    else:
-        scores_away_team.append(matchday_scores[i])
+    for i in range(len(high_level)):
+        if i % 2 == 0:
+            result_home_team.append(high_level[i])
+        else:
+            result_away_team.append(high_level[i])
 
-match_result = []
+    ind = []
 
-for home, away in zip(scores_home_team, scores_away_team):
+    for home, away in zip(result_home_team, result_away_team):
+        ind.append(home + " vs " + away)
+
+    yesterdays_results = pd.DataFrame(match_result, columns=["result"])
+
+    yesterdays_results.index = ind
+
+    yesterdays_results
+
+    yesterday = datetime.now() - timedelta(1)
+
+    yesterday = datetime.strftime(yesterday, "%Y-%m-%d")
+
     try:
-        if int(home) > int(away):
-            match_result.append("home")
-        if int(away) > int(home):
-            match_result.append("away")
-        if int(home) == int(away):
-            match_result.append("draw")
-    except (ValueError):
-        match_result.append("pp")
+        yesterdays_fixtures = pd.read_csv(
+            "/opt/airflow/" + yesterday + "_fixtures.csv",
+            index_col=0,
+        )
 
-result_home_team = []
-result_away_team = []
+        yesterdays_fixtures = pd.merge(
+            yesterdays_fixtures,
+            yesterdays_results,
+            left_index=True,
+            right_index=True,
+            how="left",
+        )
 
-for i in range(len(high_level)):
-    if i % 2 == 0:
-        result_home_team.append(high_level[i])
-    else:
-        result_away_team.append(high_level[i])
+        yesterdays_fixtures.to_csv("/opt/airflow/" + str(yesterday) + "_fixtures.csv")
+    except (FileNotFoundError):
+        print(f"Unable to find csv for {yesterday}")
 
-ind = []
-
-for home, away in zip(result_home_team, result_away_team):
-    ind.append(home + " vs " + away)
-
-yesterdays_results = pd.DataFrame(match_result, columns=["result"])
-
-yesterdays_results.index = ind
-
-yesterdays_results
-
-yesterday = datetime.now() - timedelta(1)
-
-yesterday = datetime.strftime(yesterday, "%Y-%m-%d")
-
-try:
-    yesterdays_fixtures = pd.read_csv(
-        "/Users/sam/Documents/projects/premier_league_predictions/data/"
-        + yesterday
-        + "_fixtures.csv",
-        index_col=0,
+    week_31_fixtures = pd.DataFrame(
+        columns=[
+            "ppg_home_team",
+            "recent_ppg_home_team",
+            "home_ppg_home_team",
+            "away_ppg_home_team",
+            "goals_scored_home_team",
+            "goals_conceded_home_team",
+            "oppg_home_team",
+            "ppg_away_team",
+            "recent_ppg_away_team",
+            "home_ppg_away_team",
+            "away_ppg_away_team",
+            "goals_scored_away_team",
+            "goals_conceded_away_team",
+            "oppg_away_team",
+        ]
     )
 
-    yesterdays_fixtures = pd.merge(
-        yesterdays_fixtures,
-        yesterdays_results,
-        left_index=True,
-        right_index=True,
-        how="left",
-    )
-
-    yesterdays_fixtures.to_csv(
-        "/Users/sam/Documents/projects/premier_league_predictions/data/"
-        + str(yesterday)
-        + "_fixtures.csv"
-    )
-except (FileNotFoundError):
-    print(f"Unable to find csv for {yesterday}")
-
-week_31_fixtures = pd.DataFrame(
-    columns=[
-        "ppg_home_team",
-        "recent_ppg_home_team",
-        "home_ppg_home_team",
-        "away_ppg_home_team",
-        "goals_scored_home_team",
-        "goals_conceded_home_team",
-        "oppg_home_team",
-        "ppg_away_team",
-        "recent_ppg_away_team",
-        "home_ppg_away_team",
-        "away_ppg_away_team",
-        "goals_scored_away_team",
-        "goals_conceded_away_team",
-        "oppg_away_team",
+    week_31_home = [
+        "Chelsea",
+        "Everton",
+        "Leeds Utd",
+        "Leicester City",
+        "Manchester Utd",
+        "Watford",
+        "Brentford",
+        "Southampton",
+        "Arsenal",
+        "Blackburn",
     ]
-)
 
-week_31_home = [
-    "Chelsea",
-    "Everton",
-    "Leeds Utd",
-    "Leicester City",
-    "Manchester Utd",
-    "Watford",
-    "Brentford",
-    "Southampton",
-    "Arsenal",
-    "Blackburn",
-]
+    week_31_away = [
+        "Manchester C.",
+        "Norwich City",
+        "West Ham Utd",
+        "Burnley",
+        "Aston Villa",
+        "Newcastle Utd",
+        "Liverpool",
+        "Wolverhampton",
+        "Tottenham",
+        "Cardiff City",
+    ]
 
-week_31_away = [
-    "Manchester C.",
-    "Norwich City",
-    "West Ham Utd",
-    "Burnley",
-    "Aston Villa",
-    "Newcastle Utd",
-    "Liverpool",
-    "Wolverhampton",
-    "Tottenham",
-    "Cardiff City",
-]
+    rows = []
+    index = []
 
-rows = []
-index = []
+    for current_week_home, current_week_away in zip(week_31_home, week_31_away):
+        rows.append(
+            data_scrapper.build_fixture(results, current_week_home, current_week_away)
+        )
+        index.append(current_week_home + " vs " + current_week_away)
 
-for current_week_home, current_week_away in zip(week_31_home, week_31_away):
-    rows.append(
-        data_scrapper.build_fixture(results, current_week_home, current_week_away)
+    for row in rows:
+        week_31_fixtures = week_31_fixtures.append(row)
+
+    week_31_fixtures.index = index
+
+    week_31_fixtures.to_csv("/opt/airflow/current_gameweek.csv")
+
+
+with DAG(
+    "Premier_League_Predictions",
+    default_args=default_args,
+    description="Scrape data for making predictions about the premier league",
+    start_date=datetime(2021, 9, 28),
+    schedule_interval="30 12 * * *",
+    tags=["prem_preds"],
+) as dag:
+
+    # t1, t2 and t3 are examples of tasks created by instantiating operators
+    t1 = PythonOperator(
+        task_id="scrape_data",
+        python_callable=main,
     )
-    index.append(current_week_home + " vs " + current_week_away)
 
-for row in rows:
-    week_31_fixtures = week_31_fixtures.append(row)
-
-week_31_fixtures.index = index
-
-week_31_fixtures.to_csv(
-    "/Users/sam/Documents/projects/premier_league_predictions/current_gameweek.csv"
-)
+t1
