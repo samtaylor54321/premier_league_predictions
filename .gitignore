@@ -129,5 +129,9 @@ dmypy.json
 .pyre/
 
 .idea/
+*.csv
+.DS_Store
+.vscode
+logs
 
-data/
+data
