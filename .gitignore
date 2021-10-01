@@ -135,5 +135,6 @@ dmypy.json
 logs
 
 data
-
+model
 notebooks
+database.db
