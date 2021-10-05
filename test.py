@@ -1,15 +1,11 @@
 import requests
+import pandas as pd
 
-BASE_URL = "http://127.0.0.1:5000/"
+url = "http://localhost:5000/results"
 
-response = requests.put(
-    BASE_URL + "video/21", {"name": "cat video", "views": 40, "likes": 40}
-)
+data = pd.read_csv("/opt/airflow/data/current_gameweek.csv")
 
-print(response.json())
+for i in range(data.shape[0]):
+    r = requests.post(url, json=data.iloc[i, 1:15].to_dict())
 
-response_1 = requests.patch(BASE_URL + "video/21", {"name": "cat video 2"})
-print(response_1.json())
-
-response_3 = requests.get(BASE_URL + "video/21")
-print(response_3.json())
+print(r.json())

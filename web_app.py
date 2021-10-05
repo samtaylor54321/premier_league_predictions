@@ -1,84 +1,62 @@
-from flask import Flask, request
-from flask_restful import Resource, Api, reqparse, abort, fields, marshal_with
-from flask_sqlalchemy import SQLAlchemy
+import numpy as np
+import pandas as pd
+import pickle
+from flask import Flask, request, jsonify, render_template
+
 
 app = Flask(__name__)
-api = Api(app)
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
-db = SQLAlchemy(app)
 
-# train model
-
-video_put_args = reqparse.RequestParser()
-video_put_args.add_argument(
-    "name", type=str, help="Name of the video is required", required=True
-)
-video_put_args.add_argument("views", type=int, help="Views of the video", required=True)
-video_put_args.add_argument("likes", type=int, help="Likes on the video", required=True)
-
-video_update_args = reqparse.RequestParser()
-video_update_args.add_argument("name", type=str, help="Name of the video is required")
-video_update_args.add_argument("views", type=int, help="Views of the video")
-video_update_args.add_argument("likes", type=int, help="Likes on the video")
+clf = pickle.load(open("./model/clf.pkl", "rb"))
+pipeline = pickle.load(open("./model/pipeline.pkl", "rb"))
+team_database = pd.read_csv("./data/team_database.csv", index_col=0)
 
 
-class VideoModel(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    views = db.Column(db.Integer, nullable=False)
-    likes = db.Column(db.Integer, nullable=False)
-
-    def __repr__(self):
-        return f"Video(name = {name}, views = {views}, likes = {likes})"
+@app.route("/home")
+def home():
+    return render_template("index.html")
 
 
-resource_fields = {
-    "id": fields.Integer,
-    "name": fields.String,
-    "views": fields.Integer,
-    "likes": fields.Integer,
-}
+@app.route("/predict", methods=["POST"])
+def predict():
+    home, away = [str(x) for x in request.form.values()]
+
+    home = team_database.loc[
+        team_database.index == home, team_database.columns != "away_ppg"
+    ]
+    away = team_database.loc[
+        team_database.index == away, team_database.columns != "home_ppg"
+    ]
+
+    data = np.concatenate((home.values, away.values), axis=None)
+
+    data = pipeline.transform([data])
+    prediction = clf.predict(data)
+
+    # Format prediction
+    if prediction == 0:
+        output = "home"
+    elif prediction == 1:
+        output = "away"
+    else:
+        output = "draw"
+
+    return render_template(
+        "index.html",
+        prediction_text="Predicted to be a {} win".format(output),
+    )
 
 
-class Video(Resource):
-    @marshal_with(resource_fields)
-    def get(self, video_id):
-        result = VideoModel.query.filter_by(id=video_id).first()
-        return result
+@app.route("/results", methods=["POST"])
+def results():
+    # Parse result and transform
+    data = request.get_json(force=True)
+    data = pipeline.transform(data)
 
-    @marshal_with(resource_fields)
-    def put(self, video_id):
-        args = video_put_args.parse_args()
-        result = VideoModel.query.filter_by(id=video_id).first()
-        if result:
-            abort(409, message="video id taken...")
+    # Make prediction
+    prediction = clf.predict([np.array(list(data.values()))])
+    output = prediction[0]
 
-        video = VideoModel(
-            id=video_id, name=args["name"], views=args["views"], likes=args["likes"]
-        )
-        db.session.add(video)
-        db.session.commit()
-        return video, 201
-
-    @marshal_with(resource_fields)
-    def patch(self, video_id):
-        args = video_update_args.parse_args()
-        result = VideoModel.query.filter_by(id=video_id).first()
-        if not result:
-            abort(404, message="video id is taken...")
-        if args["name"]:
-            result.name = args["name"]
-        if args["views"]:
-            result.views = args["views"]
-        if args["likes"]:
-            result.likes = args["likes"]
-
-        db.session.commit()
-
-        return result
-
-
-api.add_resource(Video, "/video/<int:video_id>")
+    return jsonify(output)
 
 
 if __name__ == "__main__":

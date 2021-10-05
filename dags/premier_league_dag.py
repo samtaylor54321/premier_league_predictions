@@ -499,12 +499,14 @@ def scrape_data():
 
     week_31_fixtures.to_csv("/opt/airflow/data/current_gameweek.csv")
 
+    results.to_csv("/opt/airflow/data/team_database.csv")
+
 
 def train_model():
     # Parse results data
     results = pd.DataFrame()
 
-    for path in pathlib.Path("/opt/airflow/data/").rglob("*.csv"):
+    for path in pathlib.Path("./data/").rglob("*_fixtures.csv"):
         data = pd.read_csv(path)
         results = pd.concat([results, data])
 
@@ -523,9 +525,9 @@ def train_model():
     results = results[results.result.values != "pp"]
     results = results[~pd.isnull(results.result.values)]
 
-    X = results.loc[:, results.columns != "result"].values
+    X = results.iloc[:, :-3].values
 
-    y = results.iloc[:, -1].values
+    y = results["result"].values
 
     y_values = []
 
@@ -584,11 +586,13 @@ def train_model():
     # Output Model
     try:
         pickle.dump(clf, open("/opt/airflow/model/clf.pkl", "wb"))
-        print("Model created")
+        pickle.dump(imp, open("/opt/airflow/model/pipeline.pkl", "wb"))
+        print("Model objections successfully pickled")
     except Exception:
-        print("Unable to pickle model")
+        print("Unable to output pickled objects")
 
 
+train_model()
 with DAG(
     "Premier_League_Predictions",
     default_args=default_args,

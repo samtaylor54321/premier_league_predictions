@@ -10,3 +10,4 @@ distributions.
 # Add probabilities to front end
 # Need to create unit tests
 # Need to update read me
+# Refactor code to make it neater
