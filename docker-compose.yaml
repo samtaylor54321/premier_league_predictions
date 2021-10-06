@@ -59,6 +59,8 @@ x-airflow-common:
   volumes:
     - ./data:/opt/airflow/data
     - ./model:/opt/airflow/model
+    - ./templates:/opt/airflow/templates
+    - ./static:/opt/airflow/static
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
@@ -99,8 +101,11 @@ services:
   airflow-webserver:
     <<: *airflow-common
     command: webserver
+    expose: 
+      - 5000
     ports:
       - 8080:8080
+      - 5000:5000
     healthcheck:
       test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
       interval: 10s

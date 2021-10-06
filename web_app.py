@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify, render_template
 
 
 app = Flask(__name__)
+app.debug = True
 
 clf = pickle.load(open("./model/clf.pkl", "rb"))
 pipeline = pickle.load(open("./model/pipeline.pkl", "rb"))
@@ -60,4 +61,4 @@ def results():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", debug=True)

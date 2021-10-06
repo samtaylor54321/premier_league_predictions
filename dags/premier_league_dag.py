@@ -438,67 +438,6 @@ def scrape_data():
     except (FileNotFoundError):
         print(f"Unable to find csv for {yesterday}")
 
-    week_31_fixtures = pd.DataFrame(
-        columns=[
-            "ppg_home_team",
-            "recent_ppg_home_team",
-            "home_ppg_home_team",
-            "away_ppg_home_team",
-            "goals_scored_home_team",
-            "goals_conceded_home_team",
-            "oppg_home_team",
-            "ppg_away_team",
-            "recent_ppg_away_team",
-            "home_ppg_away_team",
-            "away_ppg_away_team",
-            "goals_scored_away_team",
-            "goals_conceded_away_team",
-            "oppg_away_team",
-        ]
-    )
-
-    week_31_home = [
-        "Chelsea",
-        "Everton",
-        "Leeds Utd",
-        "Leicester City",
-        "Manchester Utd",
-        "Watford",
-        "Brentford",
-        "Southampton",
-        "Arsenal",
-        "Blackburn",
-    ]
-
-    week_31_away = [
-        "Manchester C.",
-        "Norwich City",
-        "West Ham Utd",
-        "Burnley",
-        "Aston Villa",
-        "Newcastle Utd",
-        "Liverpool",
-        "Wolverhampton",
-        "Tottenham",
-        "Cardiff City",
-    ]
-
-    rows = []
-    index = []
-
-    for current_week_home, current_week_away in zip(week_31_home, week_31_away):
-        rows.append(
-            data_scrapper.build_fixture(results, current_week_home, current_week_away)
-        )
-        index.append(current_week_home + " vs " + current_week_away)
-
-    for row in rows:
-        week_31_fixtures = week_31_fixtures.append(row)
-
-    week_31_fixtures.index = index
-
-    week_31_fixtures.to_csv("/opt/airflow/data/current_gameweek.csv")
-
     results.to_csv("/opt/airflow/data/team_database.csv")
 
 
@@ -508,25 +447,17 @@ def train_model():
 
     for path in pathlib.Path("./data/").rglob("*_fixtures.csv"):
         data = pd.read_csv(path)
-        results = pd.concat([results, data])
+        if "result" in data.columns:
+            results = pd.concat([results, data])
 
     # Remove missing values
     results = results.drop(
-        [
-            "Unnamed: 0",
-            "result_x",
-            "result_y",
-            "away_ppg_home_team",
-            "home_ppg_away_team",
-        ],
-        axis=1,
+        ["Unnamed: 0", "away_ppg_home_team", "home_ppg_away_team"], axis=1
     )
-
-    results = results[results.result.values != "pp"]
+    results[results["result"] != "pp"]
     results = results[~pd.isnull(results.result.values)]
 
-    X = results.iloc[:, :-3].values
-
+    X = results.iloc[:, :-1].values
     y = results["result"].values
 
     y_values = []
@@ -542,46 +473,21 @@ def train_model():
     y = y_values
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.33, random_state=42, shuffle=True
+        X, y, test_size=0.2, random_state=42, shuffle=True
     )
 
+    # Apply Model Pipeline
     imp = SimpleImputer(missing_values=np.nan, strategy="mean")
-
     imp.fit(X_train)
     X_train = imp.transform(X_train)
     X_test = imp.transform(X_test)
 
+    #
     clf = GradientBoostingClassifier(
         learning_rate=1, max_depth=2, n_estimators=1000, random_state=0
     )
 
     clf.fit(X_train, y_train)
-
-    y_preds = clf.predict(X_test)
-
-    np.mean(np.asarray(y_test) == y_preds)
-
-    # Make predictions for this week
-    this_week = pd.read_csv(
-        "/opt/airflow/data/current_gameweek.csv",
-        index_col=0,
-    )
-
-    preds = []
-
-    this_week = this_week.drop(["away_ppg_home_team", "home_ppg_away_team"], axis=1)
-
-    this_week = imp.transform(this_week)
-
-    for result in clf.predict(this_week):
-        if result == 0:
-            preds.append("home")
-        elif result == 1:
-            preds.append("away")
-        else:
-            preds.append("draw")
-
-    print(preds)
 
     # Output Model
     try:
