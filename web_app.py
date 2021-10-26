@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.debug = True
 
 clf = pickle.load(open("./model/clf.pkl", "rb"))
-pipeline = pickle.load(open("./model/pipeline.pkl", "rb"))
+pipe = pickle.load(open("./model/pipeline.pkl", "rb"))
 team_database = pd.read_csv("./data/team_database.csv", index_col=0)
 
 
@@ -29,9 +29,8 @@ def predict():
     ]
 
     data = np.concatenate((home.values, away.values), axis=None)
+    data = pipe.transform([data])
 
-    data = pipeline.transform([data])
-    prediction = clf.predict(data)
     probs = clf.predict_proba(data)
 
     output = f"{home_name} - {round(probs[0][0], 2) * 100}% / {away_name} - {round(probs[0][1], 2) * 100}% / Draw - {round(probs[0][2], 2) * 100}%"
@@ -43,7 +42,6 @@ def predict():
 def results():
     # Parse result and transform
     data = request.get_json(force=True)
-    data = pipeline.transform(data)
 
     # Make prediction
     prediction = clf.predict([np.array(list(data.values()))])

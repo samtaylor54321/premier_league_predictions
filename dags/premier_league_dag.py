@@ -5,13 +5,15 @@ import pickle
 import re
 import requests
 from airflow import DAG
+from airflow.operators.python import PythonOperator
 from bs4 import BeautifulSoup
+from datetime import datetime, timedelta
 from scrapy import Selector
 from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
-from datetime import datetime, timedelta
-from airflow.operators.python import PythonOperator
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from time import sleep
 
 
 default_args = {
@@ -248,6 +250,7 @@ def scrape_data():
     oppg_results = pd.DataFrame(columns=["oppg"])
 
     for url in rp_urls:
+        sleep(1)
         print(f"extracting results for {url}")
         try:
             df = data_scrapper.extract_oppg_data(url)
@@ -266,6 +269,7 @@ def scrape_data():
     all_results = {}
 
     for url in base_urls:
+        sleep(1)
         print(url)
         result_elems = data_scrapper.parse_html(url)
 
@@ -282,22 +286,24 @@ def scrape_data():
                 goals_scored,
                 goals_conceded,
             ) = data_scrapper.extract_core_data(result_elems)
+
+            dataset = data_scrapper.build_dataset(
+                league_table,
+                form_table,
+                home_table,
+                away_table,
+                goals_scored,
+                goals_conceded,
+            )
+            all_results.update(dataset)
         except (ValueError):
             print("Unable to parse data for " + url)
-
-        dataset = data_scrapper.build_dataset(
-            league_table,
-            form_table,
-            home_table,
-            away_table,
-            goals_scored,
-            goals_conceded,
-        )
-        all_results.update(dataset)
 
     results = pd.DataFrame.from_dict(all_results, orient="index")
 
     results = results.merge(oppg_results, how="left", left_index=True, right_index=True)
+
+    print(results.shape[0])
 
     # Build dataset for todays results
     todays_matches = requests.get("https://www.soccerstats.com/matches.asp?matchday=1")
@@ -409,34 +415,32 @@ def scrape_data():
         ind.append(home + " vs " + away)
 
     yesterdays_results = pd.DataFrame(match_result, columns=["result"])
-
     yesterdays_results.index = ind
-
-    yesterdays_results
-
-    yesterday = datetime.now() - timedelta(1)
-
-    yesterday = datetime.strftime(yesterday, "%Y-%m-%d")
 
     try:
         yesterdays_fixtures = pd.read_csv(
-            "/opt/airflow/data/" + yesterday + "_fixtures.csv",
+            "/opt/airflow/data/"
+            + str(datetime.strftime(datetime.now() - timedelta(1), "%Y-%m-%d"))
+            + "_fixtures.csv",
             index_col=0,
         )
-
-        yesterdays_fixtures = pd.merge(
-            yesterdays_fixtures,
-            yesterdays_results,
-            left_index=True,
-            right_index=True,
-            how="left",
-        )
-
-        yesterdays_fixtures.to_csv(
-            "/opt/airflow/data/" + str(yesterday) + "_fixtures.csv"
-        )
+        if "result" in yesterdays_fixtures.columns:
+            print("results from yesterday already populated")
+        else:
+            yesterdays_fixtures = pd.merge(
+                yesterdays_fixtures,
+                yesterdays_results,
+                left_index=True,
+                right_index=True,
+                how="left",
+            )
+            yesterdays_fixtures.to_csv(
+                "/opt/airflow/data/"
+                + str(datetime.strftime(datetime.now() - timedelta(1), "%Y-%m-%d"))
+                + "_fixtures.csv"
+            )
     except (FileNotFoundError):
-        print(f"Unable to find csv for {yesterday}")
+        print("No file found")
 
     results.to_csv("/opt/airflow/data/team_database.csv")
 
@@ -457,9 +461,11 @@ def train_model():
     results[results["result"] != "pp"]
     results = results[~pd.isnull(results.result.values)]
 
+    # Extract X, y from dataset
     X = results.iloc[:, :-1].values
     y = results["result"].values
 
+    # Parse y into labels
     y_values = []
 
     for value in y:
@@ -472,33 +478,30 @@ def train_model():
 
     y = y_values
 
+    # Create Test/Train split
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, shuffle=True
     )
 
     # Apply Model Pipeline
-    imp = SimpleImputer(missing_values=np.nan, strategy="mean")
-    imp.fit(X_train)
-    X_train = imp.transform(X_train)
-    X_test = imp.transform(X_test)
+    pipe = Pipeline([("imp", SimpleImputer(missing_values=np.nan, strategy="mean"))])
+    X_train = pipe.fit_transform(X_train)
 
-    #
+    # Train classifier
     clf = GradientBoostingClassifier(
-        learning_rate=1, max_depth=2, n_estimators=1000, random_state=0
+        learning_rate=0.1, n_estimators=50, random_state=0, max_depth=1
     )
-
     clf.fit(X_train, y_train)
 
     # Output Model
     try:
         pickle.dump(clf, open("/opt/airflow/model/clf.pkl", "wb"))
-        pickle.dump(imp, open("/opt/airflow/model/pipeline.pkl", "wb"))
+        pickle.dump(pipe, open("/opt/airflow/model/pipeline.pkl", "wb"))
         print("Model objections successfully pickled")
     except Exception:
         print("Unable to output pickled objects")
 
 
-train_model()
 with DAG(
     "Premier_League_Predictions",
     default_args=default_args,
