@@ -1,10 +1,19 @@
 import numpy as np
 import pandas as pd
+import pathlib
+import pickle
+import re
 import requests
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from bs4 import BeautifulSoup
 from datetime import datetime, timedelta
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import LeaveOneOut
+from sklearn.metrics import f1_score
+from sklearn.ensemble import GradientBoostingClassifier
 
 
 default_args = {
@@ -89,6 +98,53 @@ def scrape_data():
     for dataframe in overall:
         final_results = pd.concat([final_results, dataframe], ignore_index=True, axis=0)
 
+    final_results.index = [x.strip() for x in final_results.iloc[:, 1].values]
+
+    columns_to_be_dropped = [
+        0,
+        16,
+        17,
+        18,
+        19,
+        20,
+        47,
+        74,
+        101,
+        122,
+        143,
+        171,
+        199,
+        219,
+        239,
+        264,
+        289,
+        317,
+        345,
+        364,
+        383,
+        409,
+        435,
+        462,
+        489,
+        511,
+        533,
+        552,
+    ]
+
+    final_results = final_results.drop(
+        final_results.columns[columns_to_be_dropped], axis=1
+    )
+
+    final_results["Last 5"] = final_results["Last 5"].apply(
+        lambda x: (x.count("W") * 3 + x.count("D") * 1) / 15
+    )
+
+    final_results["Attendance"] = final_results["Attendance"].apply(
+        lambda x: int("".join(re.findall(r"\d", x)))
+    )
+
+    final_results.to_csv("/opt/airflow/data/team_database_new.csv", index=True)
+
     # Build dataset for todays matches
     url = "https://fbref.com/en/matches/" + str(
         datetime.strftime(datetime.now(), "%Y-%m-%d")
@@ -113,7 +169,6 @@ def scrape_data():
 
     todays_matches = pd.DataFrame({"home": home, "away": away})
 
-    final_results.index = [x.strip() for x in final_results.iloc[:, 1].values]
     todays_matches = todays_matches.merge(
         final_results, how="inner", left_on="home", right_index=True
     )
@@ -186,7 +241,7 @@ def scrape_data():
             print("results from yesterday already populated")
         else:
             yesterdays_fixtures = yesterdays_fixtures.merge(
-                yesterdays_results[["home", "away", "score"]],
+                yesterdays_results[["home", "away", "result"]],
                 how="inner",
                 left_on=["home", "away"],
                 right_on=["home", "away"],
@@ -201,6 +256,86 @@ def scrape_data():
 
     except (FileNotFoundError, KeyError):
         print("No file found")
+
+
+def train_model():
+    results = pd.DataFrame()
+
+    for path in pathlib.Path("./data/").rglob("*_fixtures_new.csv"):
+        data = pd.read_csv(path)
+        if "result" in data.columns:
+            string_columns = data.loc[:, data.dtypes == "object"].columns
+            for column in string_columns:
+                if column in ["home", "away", "result"]:
+                    continue
+                else:
+                    data[column] = [int(x.replace(",", "")) for x in data[column]]
+            data = data.drop(["home", "away"], axis=1)
+            results = pd.concat([results, data])
+
+    if results.shape[0] == 0:
+        print("No results to process")
+    else:
+        results = results[results["result"] != "no result"]
+
+        y = []
+
+        for result in results["result"]:
+            if result == "home":
+                y.append(0)
+            elif result == "away":
+                y.append(1)
+            else:
+                y.append(2)
+
+        X = results.loc[:, results.columns.values != "result"]
+
+        y = np.asarray(y)
+
+        pipe = Pipeline(
+            [
+                ("imp", SimpleImputer(missing_values=np.nan, fill_value=0)),
+                ("scaler", StandardScaler()),
+            ]
+        )
+        clf = GradientBoostingClassifier(
+            n_estimators=500,
+            learning_rate=1.0,
+            max_depth=3,
+            random_state=0,
+            max_features="sqrt",
+        )
+        loo = LeaveOneOut()
+
+        result = []
+
+        for train_index, test_index in loo.split(X):
+            X_train = X.iloc[train_index, :]
+            X_test = X.iloc[test_index, :]
+            y_train = y[train_index]
+            y_test = y[test_index]
+
+            X_train = pipe.fit_transform(X_train)
+            X_test = pipe.transform(X_test)
+
+            X_train = np.float32(X_train)
+            X_test = np.float32(X_test)
+
+            clf.fit(X_train, y_train)
+            pred = clf.predict(X_test)
+            result.append(pred)
+
+        X = pipe.fit_transform(X)
+        clf.fit(X, y)
+
+        # Output Model
+        try:
+            pickle.dump(clf, open("/opt/airflow/model/clf_new.pkl", "wb"))
+            pickle.dump(pipe, open("/opt/airflow/model/pipeline_new.pkl", "wb"))
+            print(f"Model Performance: {np.mean(result)}")
+            print("Model objections successfully pickled")
+        except Exception:
+            print("Unable to output pickled objects")
 
 
 with DAG(
@@ -218,6 +353,6 @@ with DAG(
         python_callable=scrape_data,
     )
 
-    # t2 = PythonOperator(task_id="train_model", python_callable=train_model)
+    t2 = PythonOperator(task_id="train_model", python_callable=train_model)
 
-t1
+t1 >> t2
