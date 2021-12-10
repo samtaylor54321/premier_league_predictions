@@ -257,6 +257,9 @@ def scrape_data():
         print("No file found")
 
 
+scrape_data()
+
+
 def train_model():
     results = pd.DataFrame()
 
@@ -288,6 +291,10 @@ def train_model():
                 y.append(2)
 
         X = results.loc[:, results.columns.values != "result"]
+
+        for col in X.columns:
+            if X[col].dtype == "O" and (col != "home" and col != "away"):
+                X[col] = X[col].apply(lambda x: int("".join(re.findall(r"\d", x))))
 
         y = np.asarray(y)
 

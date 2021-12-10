@@ -12,6 +12,12 @@ clf = pickle.load(open("./model/clf_new.pkl", "rb"))
 pipe = pickle.load(open("./model/pipeline_new.pkl", "rb"))
 team_database = pd.read_csv("./data/team_database_new.csv", index_col=0)
 
+for col in team_database.columns:
+    if team_database[col].dtype == "O" and (col != "home" and col != "away"):
+        team_database[col] = team_database[col].apply(
+            lambda x: int("".join(re.findall(r"\d", x)))
+        )
+
 
 @app.route("/home")
 def home():
@@ -20,7 +26,6 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
-    #   try:
     home_name, away_name = [str(x) for x in request.form.values()]
 
     home = team_database.loc[team_database.index == home_name, :]
