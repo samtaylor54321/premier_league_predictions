@@ -12,7 +12,6 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from sklearn.model_selection import LeaveOneOut
-from sklearn.metrics import f1_score
 from sklearn.ensemble import GradientBoostingClassifier
 
 
