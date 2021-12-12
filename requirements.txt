@@ -6,3 +6,4 @@ requests==2.26.0
 Scrapy==2.4.0
 beautifulsoup4==4.10.0
 ruamel_yaml==0.17.16
+pylint
