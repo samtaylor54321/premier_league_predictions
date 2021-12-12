@@ -14,7 +14,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import LeaveOneOut
 from sklearn.ensemble import GradientBoostingClassifier
 
-
 default_args = {
     "owner": "airflow",
     "depends_on_past": False,
