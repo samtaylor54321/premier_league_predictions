@@ -3,7 +3,7 @@ install:
 		pip install -r requirements.txt
 
 lint:
-	pylint --disable=R,C dags/premier_league_dag.py
+	pylint --disable=R,C,W,E1101,E1136,E1137 dags/premier_league_dag.py
 
 format:
 	black *.py

@@ -139,3 +139,6 @@ model
 notebooks
 database.db
 OLD_web_app.py
+
+bin/
+pyvenv.cfg
