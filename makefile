@@ -9,4 +9,4 @@ format:
 	black *.py
 
 test:
-	python -m pytest -vv --cov=test/premier_league_dag tests/test_.py
+	python -m pytest -vv --cov=dags/premier_league_dag.py tests/test_scrapper.py
