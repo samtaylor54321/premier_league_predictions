@@ -361,4 +361,6 @@ with DAG(
 
     t2 = PythonOperator(task_id="train_model", python_callable=train_model)
 
+scrape_data()
+
 t1 >> t2
