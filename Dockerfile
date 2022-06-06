@@ -1,8 +1,20 @@
-FROM python:3.8-slim-buster
+# Set base image (host OS)
+FROM python:3.9-slim-buster
 
-COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# By default, listen on port 5000
+EXPOSE 5000/tcp
 
-COPY . .
+# Set the working directory in the container
+WORKDIR /app
 
-CMD [ "python",  "./web_app.py"]
+# Copy the dependencies file to the working directory
+COPY requirements.txt .
+
+# Install any dependencies
+RUN pip install -r requirements.txt
+
+# Copy the content of the local src directory to the working directory
+COPY web_app.py .
+
+# Specify the command to run on container start
+CMD [ "python", "./web_app.py" ]

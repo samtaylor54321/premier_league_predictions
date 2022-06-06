@@ -142,3 +142,6 @@ OLD_web_app.py
 
 bin/
 pyvenv.cfg
+
+scratch
+todo list
