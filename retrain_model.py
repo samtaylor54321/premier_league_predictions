@@ -6,7 +6,6 @@ from tensorflow import keras
 import awswrangler as wr
 import boto3
 import joblib
-import pickle
 import math
 import os
 import tempfile
@@ -75,9 +74,11 @@ class OneCycleScheduler(keras.callbacks.Callback):
         K.set_value(self.model.optimizer.learning_rate, rate)
 
 
+# Configure logging
 root_logdir = os.path.join(os.curdir, "logs")
 run_logdir = get_run_logdir()
 
+# Pull access keys and instantiate session
 access_key, secret_access_key = get_keys()
 session = boto3.Session(
     aws_access_key_id=access_key,
@@ -85,67 +86,51 @@ session = boto3.Session(
     region_name="eu-west-2",
 )
 
-team_database = wr.s3.read_csv(
-    path="s3://premierleaguepredictions/team_database.csv",
-    boto3_session=session,
-    index_col=0,
-)
-data = wr.s3.read_csv(
+# Read training data into memory
+training_data = wr.s3.read_csv(
     path="s3://premierleaguepredictions/training_data.csv",
     boto3_session=session,
     index_col=0,
 )
 
-s3_client = boto3.client("s3")
-
-y = data.result
-
+# Generate labels from training data
 encoder = LabelEncoder()
+y = encoder.fit_transform(training_data.result)
 
-y = encoder.fit_transform(y)
-
+# Preprocess string columns in the dataset
 cols_to_drop = []
 
-for col in team_database.columns:
-    if team_database[col].dtype == "object":
+for col in training_data.columns:
+    if training_data[col].dtype == "object":
         cols_to_drop.append(col)
 
     if "notes" in col:
         cols_to_drop.append(col)
 
-team_database = team_database.drop(cols_to_drop, axis=1)
+training_data = training_data.drop(cols_to_drop, axis=1)
 
-cols_to_drop = []
-
-for col in data.columns:
-    if data[col].dtype == "object":
-        cols_to_drop.append(col)
-
-    if "notes" in col:
-        cols_to_drop.append(col)
-
-data = data.drop(cols_to_drop, axis=1)
-
+# Generate pipeline and apply to training data
 pipe = Pipeline(
     [
         ("imp", SimpleImputer()),
         ("scaler", StandardScaler()),
     ]
 )
+training_data = pipe.fit_transform(training_data)
 
-data = pipe.fit_transform(data)
-
-key = "pipeline.pkl"
-
-# WRITE
+# Write pipeline to s3
 with tempfile.TemporaryFile() as fp:
     joblib.dump(pipe, fp)
     fp.seek(0)
-    s3_client.put_object(Body=fp.read(), Bucket=BUCKET_NAME, Key=key)
+    boto3.client("s3").put_object(
+        Body=fp.read(), Bucket=BUCKET_NAME, Key="pipeline.pkl"
+    )
 
-onecycle = OneCycleScheduler(math.ceil(len(data) / 32) * 100, max_rate=0.05)
+# Instantiate scheduler for training model
+onecycle = OneCycleScheduler(math.ceil(len(training_data) / 32) * 100, max_rate=0.05)
 
-input_layer = keras.layers.Input(shape=data.shape[1:])
+# Create model summary
+input_layer = keras.layers.Input(shape=training_data.shape[1:])
 dense_layer_1 = keras.layers.Dense(
     30,
     activation="elu",
@@ -172,16 +157,16 @@ dense_layer_4 = keras.layers.Dense(
 )(dense_layer_3)
 output_layer = keras.layers.Dense(3, activation="softmax")(dense_layer_4)
 
+# Instantiate model and compile
 model = keras.Model(inputs=[input_layer], outputs=[output_layer])
-
 optimizer = keras.optimizers.SGD(momentum=0.9, nesterov=True)
-
 model.compile(
     loss="sparse_categorical_crossentropy", optimizer="nadam", metrics=["accuracy"]
 )
 
+# Fit model to training data
 model.fit(
-    data,
+    training_data,
     y,
     epochs=100,
     validation_split=0.3,
@@ -191,10 +176,11 @@ model.fit(
     ],
     batch_size=32,
 )
-# Write model
+
+# Write model to s3
 with tempfile.TemporaryFile() as fp:
     joblib.dump(model, fp)
     fp.seek(0)
-    s3_client.put_object(
+    boto3.client("s3").put_object(
         Body=fp.read(), Bucket=BUCKET_NAME, Key="premier-league-predictions-model"
     )

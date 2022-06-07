@@ -1,14 +1,11 @@
 import awswrangler as wr
 import boto3
 import joblib
-import pickle
 import numpy as np
 import pandas as pd
-import pickle
 import tempfile
 
 from flask import Flask, request, jsonify, render_template
-from tensorflow import keras
 
 BUCKET_NAME = "premierleaguepredictions"
 
@@ -28,11 +25,29 @@ def get_keys():
 
 # Get access keys for AWS
 access_key, secret_access_key = get_keys()
+
+# Instantiate boto3 session
 session = boto3.Session(
     aws_access_key_id=access_key,
     aws_secret_access_key=secret_access_key,
     region_name="eu-west-2",
 )
+
+# Read pipeline into memory
+with tempfile.TemporaryFile() as fp:
+    boto3.client("s3").download_fileobj(
+        Fileobj=fp, Bucket=BUCKET_NAME, Key="pipeline.pkl"
+    )
+    fp.seek(0)
+    pipe = joblib.load(fp)
+
+# Load model into memory
+with tempfile.TemporaryFile() as fp:
+    boto3.client("s3").download_fileobj(
+        Fileobj=fp, Bucket=BUCKET_NAME, Key="premier-league-predictions-model"
+    )
+    fp.seek(0)
+    model = joblib.load(fp)
 
 # Pull in data from S3
 team_database = wr.s3.read_csv(
@@ -54,24 +69,6 @@ for col in team_database.columns:
 team_database = team_database.drop(cols_to_drop, axis=1)
 
 
-s3_client = boto3.client("s3")
-key = "pipeline.pkl"
-
-# READ
-with tempfile.TemporaryFile() as fp:
-    s3_client.download_fileobj(Fileobj=fp, Bucket=BUCKET_NAME, Key="pipeline.pkl")
-    fp.seek(0)
-    pipe = joblib.load(fp)
-
-# Load model
-with tempfile.TemporaryFile() as fp:
-    s3_client.download_fileobj(
-        Fileobj=fp, Bucket=BUCKET_NAME, Key="premier-league-predictions-model"
-    )
-    fp.seek(0)
-    model = joblib.load(fp)
-
-
 @app.route("/home")
 def home():
     return render_template("index.html")
@@ -79,15 +76,16 @@ def home():
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    # Parse team names from request
     home_name, away_name = [str(x) for x in request.form.values()]
 
+    # Lookup values in the team database
     home = team_database.loc[team_database.index == home_name, :]
     away = team_database.loc[team_database.index == away_name, :]
 
+    # Preprocess dataset and make predictions
     data = np.concatenate((home.values, away.values), axis=None)
-
     data = pipe.transform([data])
-
     pred = model.predict(data)
 
     return render_template("index.html", prediction_text="{}".format(pred))
