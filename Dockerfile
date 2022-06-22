@@ -9,6 +9,8 @@ WORKDIR /app
 
 # Copy the dependencies file to the working directory
 COPY requirements.txt .
+ADD static/css /app/static/css
+ADD templates /app/templates
 
 # Install any dependencies
 RUN pip install -r requirements.txt

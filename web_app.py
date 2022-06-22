@@ -66,6 +66,8 @@ for col in team_database.columns:
     if "notes" in col:
         cols_to_drop.append(col)
 
+    cols_to_drop.append("points_avg")
+
 team_database = team_database.drop(cols_to_drop, axis=1)
 
 
