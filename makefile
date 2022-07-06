@@ -3,10 +3,10 @@ install:
 		pip install -r requirements.txt
 
 lint:
-	pylint --disable=R,C,W,E1101,E1136,E1137 dags/premier_league_dag.py
+	pylint web_app.py
 
 format:
 	black *.py
 
 test:
-	python -m pytest -vv --cov=dags/premier_league_dag.py tests/test_scrapper.py
+	python -m pytest -vv --cov=web_app.py tests/test_scrapper.py

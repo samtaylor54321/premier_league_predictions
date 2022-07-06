@@ -1,9 +1,9 @@
-import awswrangler as wr
+import tempfile
 import boto3
 import joblib
+import awswrangler as wr
 import numpy as np
-import pandas as pd
-import tempfile
+
 
 from flask import Flask, request, jsonify, render_template
 
@@ -14,13 +14,25 @@ app.debug = True
 
 
 def get_keys():
+    """Collect AWS Credentials
+
+    Gather access key and secret access key for AWS account
+
+    Returns:
+        tuple: Access Key and Secret Access Key for SSMs
+    """
     ssm = boto3.client("ssm", "eu-west-2")
 
-    access_key = ssm.get_parameter(Name="ACCESS_KEY", WithDecryption=True)
+    access_key_value = ssm.get_parameter(Name="ACCESS_KEY", WithDecryption=True)
 
-    secret_access_key = ssm.get_parameter(Name="SECRET_ACCESS_KEY", WithDecryption=True)
+    secret_access_key_value = ssm.get_parameter(
+        Name="SECRET_ACCESS_KEY", WithDecryption=True
+    )
 
-    return access_key["Parameter"]["Value"], secret_access_key["Parameter"]["Value"]
+    return (
+        access_key_value["Parameter"]["Value"],
+        secret_access_key_value["Parameter"]["Value"],
+    )
 
 
 # Get access keys for AWS
@@ -73,11 +85,13 @@ team_database = team_database.drop(cols_to_drop, axis=1)
 
 @app.route("/home")
 def home():
+    """Render HTML for Webpage"""
     return render_template("index.html")
 
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    """Method for generating predictions from the model"""
     # Parse team names from request
     home_name, away_name = [str(x) for x in request.form.values()]
 
@@ -90,11 +104,19 @@ def predict():
     data = pipe.transform([data])
     pred = model.predict(data)
 
+    if np.argmax(pred) == 0:
+        pred = "Away Win"
+    elif np.argmax(pred) == 1:
+        pred = "Draw"
+    else:
+        pred = "Home Win"
+
     return render_template("index.html", prediction_text="{}".format(pred))
 
 
 @app.route("/results", methods=["POST"])
 def results():
+    """Return results back to user"""
     # Parse result and transform
     data = request.get_json(force=True)
 
