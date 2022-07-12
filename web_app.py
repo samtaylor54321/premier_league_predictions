@@ -68,6 +68,9 @@ team_database = wr.s3.read_csv(
     index_col=0,
 )
 
+# Extract top scorer to feed into model
+top_scorers = team_database["top_team_scorers"].astype("category")
+
 # Drop columns from team database
 cols_to_drop = []
 
@@ -102,7 +105,7 @@ def predict():
     # Preprocess dataset and make predictions
     data = np.concatenate((home.values, away.values), axis=None)
     data = pipe.transform([data])
-    pred = model.predict(data)
+    pred = model.predict([data, top_scorers.cat.codes[home_name].reshape((1))])
 
     if np.argmax(pred) == 0:
         pred = "Away Win"

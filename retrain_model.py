@@ -97,6 +97,10 @@ training_data = wr.s3.read_csv(
 encoder = LabelEncoder()
 y = encoder.fit_transform(training_data.result)
 
+# Extract top scorer to feed into model
+top_scorer = training_data["top_team_scorers_x"].astype("category")
+top_scorer_id = top_scorer.cat.codes
+
 # Preprocess string columns in the dataset
 cols_to_drop = []
 
@@ -130,7 +134,16 @@ with tempfile.TemporaryFile() as fp:
 onecycle = OneCycleScheduler(math.ceil(len(training_data) / 32) * 100, max_rate=0.05)
 
 # Create model summary
+
+# Generate text features
+text_input = keras.Input(shape=(1,))
 input_layer = keras.layers.Input(shape=training_data.shape[1:])
+
+embed_layer = keras.layers.Embedding(
+    input_dim=training_data.shape[0], input_length=1, output_dim=1
+)(text_input)
+flatten_text_layer = keras.layers.Flatten()(embed_layer)
+
 dense_layer_1 = keras.layers.Dense(
     30,
     activation="elu",
@@ -155,10 +168,13 @@ dense_layer_4 = keras.layers.Dense(
     kernel_initializer="he_normal",
     kernel_regularizer=keras.regularizers.l2(0.01),
 )(dense_layer_3)
+
+concat_layer = keras.layers.Concatenate()([dense_layer_4, flatten_text_layer])
+
 output_layer = keras.layers.Dense(3, activation="softmax")(dense_layer_4)
 
 # Instantiate model and compile
-model = keras.Model(inputs=[input_layer], outputs=[output_layer])
+model = keras.Model(inputs=[input_layer, text_input], outputs=[output_layer])
 optimizer = keras.optimizers.SGD(momentum=0.9, nesterov=True)
 model.compile(
     loss="sparse_categorical_crossentropy", optimizer="nadam", metrics=["accuracy"]
@@ -166,7 +182,7 @@ model.compile(
 
 # Fit model to training data
 model.fit(
-    training_data,
+    [training_data, top_scorer_id.values],
     y,
     epochs=100,
     validation_split=0.3,
