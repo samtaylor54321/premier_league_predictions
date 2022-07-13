@@ -3,7 +3,7 @@ install:
 		pip install -r requirements.txt
 
 lint:
-	pylint --disable=R,C web_app.py
+	pylint --disable=R,C,W web_app.py
 
 format:
 	black *.py
