@@ -9,12 +9,18 @@ import joblib
 import math
 import os
 import tempfile
+import time
 
 K = keras.backend
 BUCKET_NAME = "premierleaguepredictions"
 
 
 def get_keys():
+    """Pull keys from AWS
+
+    Returns:
+        tuple: AWS Access Key and AWS Secret Access Key
+    """
     ssm = boto3.client("ssm", "eu-west-2")
 
     access_key = ssm.get_parameter(Name="ACCESS_KEY", WithDecryption=True)
@@ -25,8 +31,11 @@ def get_keys():
 
 
 def get_run_logdir():
-    import time
+    """Generate log directory
 
+    Returns:
+        os.path: generated log file directory
+    """
     run_id = time.strftime("run_%Y_%m_%d-%H_%M_%S")
     return os.path.join(root_logdir, run_id)
 
@@ -76,6 +85,7 @@ class OneCycleScheduler(keras.callbacks.Callback):
 
 # Configure logging
 root_logdir = os.path.join(os.curdir, "logs")
+
 run_logdir = get_run_logdir()
 
 # Pull access keys and instantiate session
