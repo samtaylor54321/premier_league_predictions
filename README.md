@@ -1,3 +1,3 @@
-# Premier League Predictions for 2020/2021 season
+# Premier League Predictions
 
-Predicting the results of premier league fixtures using Machine Learning 
+Predicting the results of premier league fixtures using Deep Learning. This produdct is deployed as a containerized flask app
