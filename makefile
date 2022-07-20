@@ -7,4 +7,3 @@ lint:
 
 format:
 	black *.py
-
