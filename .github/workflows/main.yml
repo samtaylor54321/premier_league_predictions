@@ -5,7 +5,6 @@ on: [push]
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo content
         uses: actions/checkout@v2
@@ -24,11 +23,11 @@ jobs:
           make lint
 
       - name: Deploy to Lightsail
-      run: |
-        aws lightsail create-container-service --service-name premier-league-predictions --power nano --scale 1
-        aws lightsail push-container-image --service-name premier-league-predictions --label flask-container --image premier-league-predictions
-        aws lightsail create-container-service-deployment --service-name premier-league-predictions --containers file://containers.json --public-endpoint file://public-endpoint.json
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_DEFAULT_REGION: 'eu-west-2'
+        run: |
+          aws lightsail create-container-service --service-name premier-league-predictions --power nano --scale 1
+          aws lightsail push-container-image --service-name premier-league-predictions --label flask-container --image premier-league-predictions
+          aws lightsail create-container-service-deployment --service-name premier-league-predictions --containers file://containers.json --public-endpoint file://public-endpoint.json
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "eu-west-2"
