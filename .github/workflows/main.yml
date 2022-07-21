@@ -2,8 +2,12 @@ name: Python 3.9
 
 on: [push]
 
+env:
+  SERVICE_NAME: "premier-league-predictions"
+  DOCKER_USERNAME: "samtaylor54321"
+
 jobs:
-  build:
+  build-service:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo content
@@ -22,12 +26,94 @@ jobs:
         run: |
           make lint
 
-      - name: Deploy to Lightsail
+      - name: Build vars
+        id: vars
         run: |
-          aws lightsail create-container-service --service-name premier-league-predictions --power nano --scale 1
-          aws lightsail push-container-image --service-name premier-league-predictions --label flask-container --image premier-league-predictions
-          aws lightsail create-container-service-deployment --service-name premier-league-predictions --containers file://containers.json --public-endpoint file://public-endpoint.json
+          sudo npm i -g .
+          echo "::set-output name=image::${{ env.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA"
+          echo "::set-output name=latest::${{ env.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest"
+
+      - name: Build Docker image
+        run: npm run docker:build -- -t ${{ steps.vars.outputs.image }} -t ${{ steps.vars.outputs.latest }}
+
+      - name: Login to DockerHub
+        run: |
+          echo "Authenticating docker.io"
+          echo ${{ secrets.DOCKER_AUTH_TOKEN }} | docker login --username=${{ env.DOCKER_USERNAME }} --password-stdin
+
+      - name: Push to DockerHub
+        run: |
+          docker push ${{ steps.vars.outputs.image }}
+          docker push ${{ steps.vars.outputs.latest }}
+
+    outputs:
+      image: ${{ steps.vars.outputs.image }}
+      latest: ${{ steps.vars.outputs.latest }}
+
+  deploy-service-production:
+    needs: [build-service]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install prereqs
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: "eu-west-2"
+        run: |
+          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+          aws configure set default.region $AWS_DEFAULT_REGION
+          aws configure set region $AWS_DEFAULT_REGION
+          cat ~/.aws/credentials
+
+      - name: Install Essentials
+        run: |
+          aws --version
+
+          # install LightsailCTL Plugin (https://lightsail.aws.amazon.com/ls/docs/en_us/articles/amazon-lightsail-install-software)
+          sudo apt-get update && sudo apt-get -y install curl jq
+          curl https://s3.us-west-2.amazonaws.com/lightsailctl/latest/linux-amd64/lightsailctl -o /usr/local/bin/lightsailctl
+          chmod +x /usr/local/bin/lightsailctl
+
+      - name: Deploy to Lightsail
+        env:
+          CONTAINER_SERVICE_NAME: service-${{ env.SERVICE_NAME }}
+        run: |
+          echo "Releasing to Amazon Lightsail"
+
+          docker info
+          echo ${{ secrets.DOCKER_AUTH_TOKEN }} | docker login --username=${{ env.DOCKER_USERNAME }} --password-stdin
+          docker pull ${{ needs.build-service.outputs.image }}
+
+          # upload the docker image for this pipeline
+          aws lightsail push-container-image \
+            --service-name $CONTAINER_SERVICE_NAME  \
+            --label ${{ env.SERVICE_NAME }}-latest  \
+            --image ${{ needs.build-service.outputs.image }}
+
+          # get uploaded image (its different every time)
+          IMAGE_TAG=$(aws lightsail get-container-images --service $CONTAINER_SERVICE_NAME | jq -r .containerImages[0].image)
+
+          # create a deployment with uploaded docker image
+          aws lightsail create-container-service-deployment \
+            --service-name $CONTAINER_SERVICE_NAME \
+            --containers "{
+              \"$CONTAINER_SERVICE_NAME\": {
+                \"image\": \"$IMAGE_TAG\",
+                \"environment\": {
+                  \"NODE_ENV\": \"production\",
+                  \"PGSSLMODE\": \"no-verify\"
+                },
+                \"ports\": {
+                  \"4444\": \"HTTP\"
+                }
+              }
+            }" \
+            --public-endpoint "{
+              \"containerName\": \"$CONTAINER_SERVICE_NAME\",
+              \"containerPort\": 4444,
+              \"healthCheck\": {
+                \"path\": \"/healthcheck/liveness\",
+                \"intervalSeconds\": 10
+              }
+            }"
