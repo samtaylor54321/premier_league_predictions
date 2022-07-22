@@ -45,8 +45,8 @@ jobs:
 
       - name: Push to DockerHub
         run: |
-          docker push ${{ steps.vars.outputs.image }}
-          docker push ${{ steps.vars.outputs.latest }}
+          docker tag ${{ env.SERVICE_NAME }} ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}
+          docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}
 
     outputs:
       image: ${{ steps.vars.outputs.image }}
