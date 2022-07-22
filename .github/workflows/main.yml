@@ -3,7 +3,7 @@ name: Python 3.9
 on:
   push:
     branches:
-      - "master"
+      - "dev"
 
 env:
   SERVICE_NAME: "premier-league-predictions"
@@ -29,12 +29,6 @@ jobs:
         run: |
           make lint
 
-      - name: Build vars
-        id: vars
-        run: |
-          echo "::set-output name=image::${{ env.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA"
-          echo "::set-output name=latest::${{ env.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest"
-
       - name: Build Docker image
         run: npm run docker:build -- -t ${{ steps.vars.outputs.image }} -t ${{ steps.vars.outputs.latest }}
 
@@ -47,14 +41,8 @@ jobs:
       - name: Build vars
         id: vars
         run: |
-          sudo npm i -g .
-          echo "::set-output name=image::${{ env.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA"
-          echo "::set-output name=latest::${{ env.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest"
-
-      - name: Build the tagged Docker image
-        run: docker build . --file Dockerfile --tag ${{secrets.DOCKERHUB_USERNAME}}/premier-league-predictions:latest
-      - name: Push the tagged Docker image
-        run: docker push ${{secrets.DOCKERHUB_USERNAME}}/premier-league-predictions:latest
+          echo "::set-output name=image::${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA"
+          echo "::set-output name=latest::${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest"
 
       - name: Push to DockerHub
         run: |
