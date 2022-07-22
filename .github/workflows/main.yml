@@ -85,13 +85,13 @@ jobs:
 
           docker info
           echo ${{ secrets.DOCKER_AUTH_TOKEN }} | docker login --username=${{ env.DOCKER_USERNAME }} --password-stdin
-          docker pull ${{ needs.build-service.outputs.image }}
+          docker pull  ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}
 
           # upload the docker image for this pipeline
           aws lightsail push-container-image \
             --service-name $CONTAINER_SERVICE_NAME  \
             --label ${{ env.SERVICE_NAME }}-latest  \
-            --image ${{ needs.build-service.outputs.image }}
+            --image ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}
 
           # get uploaded image (its different every time)
           IMAGE_TAG=$(aws lightsail get-container-images --service $CONTAINER_SERVICE_NAME | jq -r .containerImages[0].image)
