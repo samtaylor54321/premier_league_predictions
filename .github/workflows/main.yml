@@ -30,7 +30,7 @@ jobs:
           make lint
 
       - name: Build Docker image
-        run: npm run docker:build -- -t ${{ steps.vars.outputs.image }} -t ${{ steps.vars.outputs.latest }}
+        run: docker build -t ${{ steps.vars.outputs.image }} -t ${{ steps.vars.outputs.latest }}
 
       - name: Login to DockerHub
         uses: docker/login-action@v1
