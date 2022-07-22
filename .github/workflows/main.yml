@@ -88,8 +88,7 @@ jobs:
           docker pull  ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}
 
           # Create container service
-          aws lightsail create-container-service --service-name $CONTAINER_SERVICE_NAME \ 
-            --power small --scale 1
+          aws lightsail create-container-service --service-name $CONTAINER_SERVICE_NAME --power small --scale 1
 
           # upload the docker image for this pipeline
           aws lightsail push-container-image \
