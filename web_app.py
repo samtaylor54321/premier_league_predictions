@@ -12,26 +12,26 @@ app = Flask(__name__)
 app.debug = True
 
 
-def get_keys():
-    """Collect AWS Credentials
+# def get_keys():
+#     """Collect AWS Credentials
 
-    Gather access key and secret access key for AWS account
+#     Gather access key and secret access key for AWS account
 
-    Returns:
-        tuple: Access Key and Secret Access Key for SSMs
-    """
-    ssm = boto3.client("ssm", "eu-west-2")
+#     Returns:
+#         tuple: Access Key and Secret Access Key for SSMs
+#     """
+#     ssm = boto3.client("ssm", "eu-west-2")
 
-    access_key_value = ssm.get_parameter(Name="ACCESS_KEY", WithDecryption=True)
+#     access_key_value = ssm.get_parameter(Name="ACCESS_KEY", WithDecryption=True)
 
-    secret_access_key_value = ssm.get_parameter(
-        Name="SECRET_ACCESS_KEY", WithDecryption=True
-    )
+#     secret_access_key_value = ssm.get_parameter(
+#         Name="SECRET_ACCESS_KEY", WithDecryption=True
+#     )
 
-    return (
-        access_key_value["Parameter"]["Value"],
-        secret_access_key_value["Parameter"]["Value"],
-    )
+#     return (
+#         access_key_value["Parameter"]["Value"],
+#         secret_access_key_value["Parameter"]["Value"],
+#     )
 
 
 # Get access keys for AWS
