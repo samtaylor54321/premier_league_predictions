@@ -4,7 +4,6 @@ import joblib
 import awswrangler as wr
 import numpy as np
 
-
 from flask import Flask, request, jsonify, render_template
 
 BUCKET_NAME = "premierleaguepredictions"
@@ -36,12 +35,12 @@ def get_keys():
 
 
 # Get access keys for AWS
-access_key, secret_access_key = get_keys()
+# access_key, secret_access_key = get_keys()
 
 # Instantiate boto3 session
 session = boto3.Session(
-    aws_access_key_id=access_key,
-    aws_secret_access_key=secret_access_key,
+    #    aws_access_key_id=access_key,
+    #    aws_secret_access_key=secret_access_key,
     region_name="eu-west-2",
 )
 
