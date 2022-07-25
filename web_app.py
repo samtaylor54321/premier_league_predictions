@@ -46,15 +46,13 @@ session = boto3.Session(
 
 # Read pipeline into memory
 with tempfile.TemporaryFile() as fp:
-    boto3.client("s3").download_fileobj(
-        Fileobj=fp, Bucket=BUCKET_NAME, Key="pipeline.pkl"
-    )
+    session.download_fileobj(Fileobj=fp, Bucket=BUCKET_NAME, Key="pipeline.pkl")
     fp.seek(0)
     pipe = joblib.load(fp)
 
 # Load model into memory
 with tempfile.TemporaryFile() as fp:
-    boto3.client("s3").download_fileobj(
+    session.download_fileobj(
         Fileobj=fp, Bucket=BUCKET_NAME, Key="premier-league-predictions-model"
     )
     fp.seek(0)
