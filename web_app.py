@@ -12,15 +12,53 @@ BUCKET_NAME = "premierleaguepredictions"
 app = Flask(__name__)
 app.debug = True
 
+
+def get_keys():
+    """Collect AWS Credentials
+    Gather access key and secret access key for AWS account
+    Returns:
+        tuple: Access Key and Secret Access Key for SSMs
+    """
+    ssm = boto3.client("ssm", "eu-west-2")
+
+    access_key_value = ssm.get_parameter(Name="ACCESS_KEY", WithDecryption=True)
+
+    secret_access_key_value = ssm.get_parameter(
+        Name="SECRET_ACCESS_KEY", WithDecryption=True
+    )
+
+    return (
+        access_key_value["Parameter"]["Value"],
+        secret_access_key_value["Parameter"]["Value"],
+    )
+
+
+# Get access keys for AWS
+access_key, secret_access_key = get_keys()
+
 # Instantiate boto3 session
 session = boto3.Session(
-    profile_name="default",
+    aws_access_key_id=access_key,
+    aws_secret_access_key=secret_access_key,
     region_name="eu-west-2",
 )
 
-path1 = f"s3://premierleaguepredictions/pipeline.pkl"
-local_file = os.path.join("./pipeline.pkl", "pipeline.pkl")
-wr.s3.download(path=path1, local_file=local_file)
+# Read pipeline into memory
+with tempfile.TemporaryFile() as fp:
+    session.client("s3").download_fileobj(
+        Fileobj=fp, Bucket=BUCKET_NAME, Key="pipeline.pkl"
+    )
+    fp.seek(0)
+    pipe = joblib.load(fp)
+
+# Load model into memory
+with tempfile.TemporaryFile() as fp:
+    session.client("s3").download_fileobj(
+        Fileobj=fp, Bucket=BUCKET_NAME, Key="premier-league-predictions-model"
+    )
+    fp.seek(0)
+    model = joblib.load(fp)
+
 
 # Read pipeline into memory
 with tempfile.TemporaryFile() as fp:
