@@ -29,12 +29,6 @@ jobs:
         run: |
           make lint
 
-      - name: Build Vars
-        id: vars
-        run: |
-          echo "::set-output name=image::${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:$GITHUB_SHA"
-          echo "::set-output name=latest::${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}:latest"
-
       - name: Build Docker image
         run: docker build . --tag ${{ env.SERVICE_NAME }}:latest
 
@@ -47,10 +41,6 @@ jobs:
         run: |
           docker tag ${{ env.SERVICE_NAME }} ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}
           docker push ${{ secrets.DOCKER_USERNAME }}/${{ env.SERVICE_NAME }}
-
-    outputs:
-      image: ${{ steps.vars.outputs.image }}
-      latest: ${{ steps.vars.outputs.latest }}
 
   deploy-service-production:
     needs: [build-service]
