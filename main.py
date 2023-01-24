@@ -3,14 +3,12 @@ import boto3
 import joblib
 import awswrangler as wr
 import numpy as np
-import os
 
 from flask import Flask, request, jsonify, render_template
 
 BUCKET_NAME = "premierleaguepredictions"
 
 app = Flask(__name__)
-app.debug = True
 
 
 def get_keys():
@@ -102,7 +100,7 @@ team_database = team_database.drop(cols_to_drop, axis=1)
 
 
 @app.route("/home")
-def home():
+def home_page():
     """Render HTML for Webpage"""
     return render_template("index.html")
 
@@ -146,4 +144,4 @@ def results():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=4444, debug=True)
+    app.run(host="0.0.0.0", port=8080)

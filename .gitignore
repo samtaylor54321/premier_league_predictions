@@ -133,20 +133,3 @@ dmypy.json
 .DS_Store
 .vscode
 logs
-
-data
-model
-notebooks
-database.db
-OLD_web_app.py
-
-bin/
-pyvenv.cfg
-
-scratch
-todo list
-file.yml
-run_container.sh
-
-scoutsuite-report
-retrain_model.py

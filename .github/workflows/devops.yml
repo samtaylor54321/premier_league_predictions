@@ -1,0 +1,51 @@
+name: Premier League Predictions
+on: [push]
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          python3 -m pip install --no-cache-dir --upgrade pip
+          python3 -m pip install --no-cache-dir -r requirements.txt
+          
+      - name: Format code
+        run: |
+          python3 -m black main.py
+
+      - name: Lint with pylint
+        run: |
+          python3 -m pylint --disable=R,C main.py
+
+      - name: Test with pytest
+        run: |
+          python3 -m pytest -vv --cov=main
+    
+      - name: Run Snyk to check for vulnerabilities in dependencies
+        uses: snyk/actions/python-3.9@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+      - name: Lint with hadolint
+        uses: hadolint/hadolint-action@v2.1.0
+        with:
+          dockerfile: Dockerfile
+
+      - name: Build Container
+        run: |
+          docker build -t premier-league-predictions . 
+        
+      # - name: Run Snyk to check Docker image for vulnerabilities
+      #   uses: snyk/actions/docker@master
+      #   env:
+      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      #   with:
+      #     image: premier-league-predictions
+      #     args: --severity-threshold=high
