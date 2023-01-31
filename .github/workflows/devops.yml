@@ -20,12 +20,15 @@ jobs:
       - name: Format code
         run: |
           python3 -m black main.py
+
       - name: Lint with pylint
         run: |
           python3 -m pylint --disable=R,C main.py
+
       - name: Test with pytest
         run: |
           python3 -m pytest -vv --cov=main
+          
       - name: Run Snyk to check for vulnerabilities in dependancies
         uses: snyk/actions/python-3.9@master
         env:
