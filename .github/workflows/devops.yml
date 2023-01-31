@@ -6,6 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
+
       - name: Set up Python 3.9
         uses: actions/setup-python@v1
         with:
@@ -15,7 +16,7 @@ jobs:
         run: |
           python3 -m pip install --no-cache-dir --upgrade pip
           python3 -m pip install --no-cache-dir -r requirements.txt
-          
+        
       - name: Format code
         run: |
           python3 -m black main.py
@@ -26,12 +27,14 @@ jobs:
 
       - name: Test with pytest
         run: |
-          python3 -m pytest -vv --cov=main
-    
-      - name: Run Snyk to check for vulnerabilities in dependencies
+          python3 -m pytest -vv
+
+      - name: Run Snyk to check for vulnerabilities in dependancies
         uses: snyk/actions/python-3.9@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --fail-on=all
 
       - name: Lint with hadolint
         uses: hadolint/hadolint-action@v2.1.0
@@ -40,12 +43,12 @@ jobs:
 
       - name: Build Container
         run: |
-          docker build -t premier-league-predictions . 
-        
-      # - name: Run Snyk to check Docker image for vulnerabilities
-      #   uses: snyk/actions/docker@master
-      #   env:
-      #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-      #   with:
-      #     image: premier-league-predictions
-      #     args: --severity-threshold=high
+          docker build -t premier-league-predictions .
+          
+    # - name: Run Snyk to check Docker image for vulnerabilities
+    #   uses: snyk/actions/docker@master
+    #   env:
+    #     SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+    #   with:
+    #     image: premier-league-predictions
+    #     args: --severity-threshold=high

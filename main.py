@@ -1,102 +1,34 @@
-import tempfile
-import boto3
-import joblib
-import awswrangler as wr
 import numpy as np
+import pandas as pd
+import joblib
+from flask import Flask, request, render_template
+from google.cloud import storage
 
-from flask import Flask, request, jsonify, render_template
+BUCKET_NAME = "premier-league-predictions"
+MODEL_NAME = "model_pipeline"
 
-BUCKET_NAME = "premierleaguepredictions"
+client = storage.Client()
 
+# Download the model into memory
+bucket = client.get_bucket(BUCKET_NAME)
+blob = bucket.blob(MODEL_NAME)
+blob.download_to_filename(MODEL_NAME)
+
+with open(MODEL_NAME, "rb") as fo:
+    model_pipeline = joblib.load(fo)
+
+# Download the team database into memory
+team_database = pd.read_csv(f"gs://{BUCKET_NAME}/team-database.csv")
+
+team_database.set_index("Unnamed: 0_level_0_Squad", inplace=True)
+
+# Ensure that columns are of the correct data type
+for column in team_database.columns:
+    if (team_database[column].dtype == "object") and (column != "Outcome"):
+        team_database[column] = team_database[column].astype("float64")
+
+# Generate flask app
 app = Flask(__name__)
-
-
-def get_keys():
-    """Collect AWS Credentials
-    Gather access key and secret access key for AWS account
-    Returns:
-        tuple: Access Key and Secret Access Key for SSMs
-    """
-    ssm = boto3.client("ssm", "eu-west-2")
-
-    access_key_value = ssm.get_parameter(Name="ACCESS_KEY", WithDecryption=True)
-
-    secret_access_key_value = ssm.get_parameter(
-        Name="SECRET_ACCESS_KEY", WithDecryption=True
-    )
-
-    return (
-        access_key_value["Parameter"]["Value"],
-        secret_access_key_value["Parameter"]["Value"],
-    )
-
-
-# Get access keys for AWS
-access_key, secret_access_key = get_keys()
-
-# Instantiate boto3 session
-session = boto3.Session(
-    aws_access_key_id=access_key,
-    aws_secret_access_key=secret_access_key,
-    region_name="eu-west-2",
-)
-
-# Read pipeline into memory
-with tempfile.TemporaryFile() as fp:
-    session.client("s3").download_fileobj(
-        Fileobj=fp, Bucket=BUCKET_NAME, Key="pipeline.pkl"
-    )
-    fp.seek(0)
-    pipe = joblib.load(fp)
-
-# Load model into memory
-with tempfile.TemporaryFile() as fp:
-    session.client("s3").download_fileobj(
-        Fileobj=fp, Bucket=BUCKET_NAME, Key="premier-league-predictions-model"
-    )
-    fp.seek(0)
-    model = joblib.load(fp)
-
-
-# Read pipeline into memory
-with tempfile.TemporaryFile() as fp:
-    session.client("s3").download_fileobj(
-        Fileobj=fp, Bucket=BUCKET_NAME, Key="pipeline.pkl"
-    )
-    fp.seek(0)
-    pipe = joblib.load(fp)
-
-# Load model into memory
-with tempfile.TemporaryFile() as fp:
-    session.client("s3").download_fileobj(
-        Fileobj=fp, Bucket=BUCKET_NAME, Key="premier-league-predictions-model"
-    )
-    fp.seek(0)
-    model = joblib.load(fp)
-
-# Pull in data from S3
-team_database = wr.s3.read_csv(
-    path="s3://premierleaguepredictions/team_database.csv",
-    boto3_session=session,
-    index_col=0,
-)
-
-# Extract top scorer to feed into model
-top_scorers = team_database["top_team_scorers"].astype("category")
-
-# Drop columns from team database
-cols_to_drop = []
-
-for col in team_database.columns:
-    if team_database[col].dtype == "object":
-        cols_to_drop.append(col)
-
-    if "notes" in col:
-        cols_to_drop.append(col)
-
-    cols_to_drop.append("points_avg")
-
-team_database = team_database.drop(cols_to_drop, axis=1)
 
 
 @app.route("/home")
@@ -117,31 +49,10 @@ def predict():
 
     # Preprocess dataset and make predictions
     data = np.concatenate((home.values, away.values), axis=None)
-    data = pipe.transform([data])
-    pred = model.predict([data, top_scorers.cat.codes[home_name].reshape((1))])
+    pred = model_pipeline.predict(data.reshape(1, -1))
 
-    if np.argmax(pred) == 0:
-        pred = "Away Win"
-    elif np.argmax(pred) == 1:
-        pred = "Draw"
-    else:
-        pred = "Home Win"
-
-    return render_template("index.html", prediction_text="{}".format(pred))
-
-
-@app.route("/results", methods=["POST"])
-def results():
-    """Return results back to user"""
-    # Parse result and transform
-    data = request.get_json(force=True)
-
-    # Make prediction
-    prediction = model.predict([np.array(list(data.values()))])
-    output = prediction[0]
-
-    return jsonify(output)
+    return render_template("index.html", prediction_text="{}".format(pred[0].title()))
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080)
+    app.run(port=8080)
