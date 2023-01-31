@@ -5,7 +5,7 @@ from flask import Flask, request, render_template
 from google.cloud import storage
 
 BUCKET_NAME = "premier-league-predictions"
-MODEL_NAME = "model_pipeline.pkl"
+MODEL_NAME = "model_pipeline"
 
 client = storage.Client()
 
