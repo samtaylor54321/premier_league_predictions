@@ -27,8 +27,8 @@ jobs:
 
       - name: Test with pytest
         run: |
-          python3 -m pytest -vv --cov=main
-          
+          python3 -m pytest -vv
+
       - name: Run Snyk to check for vulnerabilities in dependancies
         uses: snyk/actions/python-3.9@master
         env:
