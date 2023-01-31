@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import joblib
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, render_template
 from google.cloud import storage
 
 BUCKET_NAME = "premier-league-predictions"
