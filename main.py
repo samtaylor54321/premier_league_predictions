@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import joblib
+import tempfile
 from flask import Flask, request, render_template
 from google.cloud import storage
 
@@ -22,9 +23,10 @@ for column in team_database.columns:
 # Download the model into memory
 bucket = client.get_bucket(BUCKET_NAME)
 blob = bucket.blob(MODEL_NAME)
-blob.download_to_filename(MODEL_NAME)
+tmpdir = tempfile.gettempdir()
+blob.download_to_filename(f"{tmpdir}/{MODEL_NAME}")
 
-with open(MODEL_NAME, "rb") as fo:
+with open(f"{tmpdir}/{MODEL_NAME}", "rb") as fo:
     model_pipeline = joblib.load(fo)
 
 # Generate flask app
