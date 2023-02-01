@@ -9,14 +9,6 @@ MODEL_NAME = "model_pipeline"
 
 client = storage.Client()
 
-# Download the model into memory
-bucket = client.get_bucket(BUCKET_NAME)
-blob = bucket.blob(MODEL_NAME)
-blob.download_to_filename(MODEL_NAME)
-
-with open(MODEL_NAME, "rb") as fo:
-    model_pipeline = joblib.load(fo)
-
 # Download the team database into memory
 team_database = pd.read_csv(f"gs://{BUCKET_NAME}/team-database.csv")
 
@@ -26,6 +18,14 @@ team_database.set_index("Unnamed: 0_level_0_Squad", inplace=True)
 for column in team_database.columns:
     if (team_database[column].dtype == "object") and (column != "Outcome"):
         team_database[column] = team_database[column].astype("float64")
+
+# Download the model into memory
+bucket = client.get_bucket(BUCKET_NAME)
+blob = bucket.blob(MODEL_NAME)
+blob.download_to_filename(MODEL_NAME)
+
+with open(MODEL_NAME, "rb") as fo:
+    model_pipeline = joblib.load(fo)
 
 # Generate flask app
 app = Flask(__name__)
