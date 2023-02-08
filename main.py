@@ -14,7 +14,9 @@ MODEL_NAME = os.getenv("MODEL_NAME")
 # Download the team database into memory
 team_database = pd.read_csv(f"gs://{BUCKET_NAME}/team-database.csv")
 
-team_database.set_index("Unnamed: 0_level_0_Squad", inplace=True)
+# Tidy team database
+team_database.set_index("Unnamed: 0_level_0_teamSquad", inplace=True)
+team_database.drop(["Unnamed: 0_level_0_oppoSquad"], axis=1, inplace=True)
 
 # Ensure that columns are of the correct data type
 for column in team_database.columns:
@@ -54,6 +56,7 @@ def index():
 @app.route("/predict", methods=["POST"])
 def predict():
     """Method for generating predictions from the model"""
+
     # Parse team names from request
     home_name, away_name = [str(x) for x in request.form.values()]
 
