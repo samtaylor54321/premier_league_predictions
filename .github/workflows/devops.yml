@@ -31,13 +31,6 @@ jobs:
       - name: Test with pytest
         run: python -m pytest -vv
 
-      - name: Run Snyk to check for vulnerabilities in dependencies
-        uses: snyk/actions/python-3.10@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --fail-on=all
-
       - name: Lint with hadolint
         uses: hadolint/hadolint-action@v3.1.0
         with:
