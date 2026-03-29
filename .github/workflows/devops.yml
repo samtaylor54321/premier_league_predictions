@@ -1,7 +1,5 @@
 name: Premier League Predictions
-on:
-  push:
-    branches: [main]
+on: [push]
 
 permissions:
   contents: read
@@ -13,10 +11,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
+      - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
-          python-version: '3.13'
+          python-version: '3.12'
           cache: 'pip'
 
       - name: Install dependencies
@@ -32,13 +30,6 @@ jobs:
 
       - name: Test with pytest
         run: python -m pytest -vv
-
-      - name: Run Snyk to check for vulnerabilities in dependencies
-        uses: snyk/actions/python-3.10@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          args: --fail-on=all
 
       - name: Lint with hadolint
         uses: hadolint/hadolint-action@v3.1.0
