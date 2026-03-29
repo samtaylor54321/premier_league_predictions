@@ -11,6 +11,6 @@ pandas==1.5.2
 numpy==1.24.1
 Flask==2.3.2
 joblib==1.2.0
-scikit-learn==1.2.1
+scikit-learn==1.5.0
 Werkzeug==3.0.1
 Flask-HTTPAuth==4.7.0
