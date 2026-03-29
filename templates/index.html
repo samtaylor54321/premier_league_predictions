@@ -18,10 +18,11 @@
 
         <!-- Main Input For Receiving Query to our ML -->
         <form action="{{ url_for('predict')}}" method="post">
+            {% csrf_token %}
             <input type="Home Team" name="Home Team" placeholder="Home Team" required="required" />
             <input type="Away Team" name="Away Team" placeholder="Away Team" required="required" />
             <button type="submit" class="btn btn-primary btn-block btn-large">Predict outcome of fixture</button>
-        </form>
+        </form>        
         <br>
         <br>
         {{ prediction_text }}
