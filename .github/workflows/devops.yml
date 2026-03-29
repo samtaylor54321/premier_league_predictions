@@ -1,7 +1,5 @@
 name: Premier League Predictions
-on:
-  push:
-    branches: [main]
+on: [push]
 
 permissions:
   contents: read
