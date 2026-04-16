@@ -1,6 +1,6 @@
 setuptools==82.0.1
 pytest==9.0.3
-pylint==3.3.4
+pylint==4.0.5
 black==26.3.1
 pytest-cov==7.1.0
 google-cloud==0.34.0
